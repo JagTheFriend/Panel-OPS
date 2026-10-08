@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum CandidateStatus {
+  WAITING
+  IN_INTERVIEW
+  DONE
+}
+
+/// A person who entered the room (roll number + PIN).
+model User {
+  id        String   @id @default(cuid())
+  rollNo    String   @unique
+  name      String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  panels           PanelMembership[]
+  createdPanels    Panel[]           @relation("PanelCreator")
+  addedCandidates  Candidate[]       @relation("CandidateAdder")
+}
+
+/// A domain station (panel). Admin-created.
+model Panel {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  seatCount   Int      @default(6)
+  isActive    Boolean  @default(true)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy   User              @relation("PanelCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members     PanelMembership[]
+  candidates  Candidate[]
+}
+
+/// A user joined to a panel (staffing it). Admin auto-joins panels they create.
+model PanelMembership {
+  id       String   @id @default(cuid())
+  panelId  String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  panel Panel @relation(fields: [panelId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([panelId, userId])
+  @@index([userId])
+}
+
+/// A participant waiting for / in / finished an interview at a panel.
+model Candidate {
+  id          String          @id @default(cuid())
+  panelId     String
+  rollNo      String
+  name        String?
+  status      CandidateStatus @default(WAITING)
+  /// Physical station/seat within the panel, assigned while IN_INTERVIEW.
+  seatNumber  Int?
+  /// Ordering inside the current column (for kanban sorting).
+  position    Int             @default(0)
+  joinedAt    DateTime        @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  addedById   String?
+
+  panel   Panel @relation(fields: [panelId], references: [id], onDelete: Cascade)
+  addedBy User? @relation("CandidateAdder", fields: [addedById], references: [id], onDelete: SetNull)
+
+  @@unique([panelId, rollNo])
+  @@index([panelId, status, position])
+}

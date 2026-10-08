@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: oc-panelist-db
+    environment:
+      POSTGRES_USER: ocpanelist
+      POSTGRES_PASSWORD: ocpanelist
+      POSTGRES_DB: ocpanelist
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ocpanelist -d ocpanelist"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  db-test:
+    image: postgres:17-alpine
+    container_name: oc-panelist-db-test
+    environment:
+      POSTGRES_USER: ocpanelist
+      POSTGRES_PASSWORD: ocpanelist
+      POSTGRES_DB: ocpanelist_test
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata-test:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ocpanelist -d ocpanelist_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
+  pgdata-test:
