@@ -1,8 +1,8 @@
 import { Radio } from "lucide-react";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { prisma } from "@/lib/db";
 import { Skeleton } from "@/components/ui/spinner";
+import { prisma } from "@/lib/db";
 import { JoinForm } from "./join-form";
 
 export const metadata = { title: "Join the room" };
@@ -45,7 +45,9 @@ export default function JoinPage() {
             <span className="flex size-9 items-center justify-center rounded-lg bg-white text-sm font-bold text-ink">
               P
             </span>
-            <span className="text-sm font-semibold tracking-tight">PanelOps</span>
+            <span className="text-sm font-semibold tracking-tight">
+              PanelOps
+            </span>
           </div>
         </div>
 

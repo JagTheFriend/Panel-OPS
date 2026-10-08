@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { Suspense, type ReactNode } from "react";
-import { getCurrentUser } from "@/lib/auth";
-import { Header } from "@/components/shell/header";
+import { type ReactNode, Suspense } from "react";
 import { IdentityBridge } from "@/components/identity-bridge";
+import { Header } from "@/components/shell/header";
+import { getCurrentUser } from "@/lib/auth";
 
 /**
  * Authentication is optimistically enforced in `proxy.ts` (real HTTP redirects

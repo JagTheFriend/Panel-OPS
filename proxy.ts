@@ -1,5 +1,5 @@
 import { getIronSession } from "iron-session";
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { type SessionData, sessionOptions } from "@/lib/session";
 
 const PROTECTED_PREFIXES = ["/board", "/panels", "/admin"];
