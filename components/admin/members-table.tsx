@@ -30,24 +30,32 @@ const headings = [
     title: "Roll number",
     className: "px-4 py-2.5 text-left",
   },
-  { label: "Name", title: "Name", className: "px-3 py-2.5 text-left" },
+  {
+    label: "Name",
+    title: "Name",
+    className: "hidden px-3 py-2.5 text-left sm:table-cell",
+  },
   { label: "Role", title: "Role", className: "px-3 py-2.5 text-left" },
   {
     label: "Panels",
     title: "Panels joined",
-    className: "px-3 py-2.5 text-right",
+    className: "hidden px-3 py-2.5 text-right lg:table-cell",
   },
   {
     label: "Added",
     title: "Candidates added",
-    className: "px-3 py-2.5 text-right",
+    className: "hidden px-3 py-2.5 text-right lg:table-cell",
   },
   {
     label: "Created",
     title: "Panels created",
-    className: "px-3 py-2.5 text-right",
+    className: "hidden px-3 py-2.5 text-right lg:table-cell",
   },
-  { label: "Joined", title: "Joined", className: "px-3 py-2.5 text-left" },
+  {
+    label: "Joined",
+    title: "Joined",
+    className: "hidden px-3 py-2.5 text-left lg:table-cell",
+  },
   { label: "Actions", title: "Actions", className: "px-4 py-2.5 text-right" },
 ] as const;
 
@@ -157,7 +165,7 @@ export function MembersTable({
         />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-line bg-surface shadow-card">
-          <table className="w-full min-w-[900px] text-sm">
+          <table className="w-full min-w-[22rem] text-sm sm:min-w-[30rem] lg:min-w-[56rem]">
             <thead>
               <tr className="border-b border-line bg-surface-2/70 text-[11px] font-semibold tracking-wider text-ink-3 uppercase">
                 {headings.map((heading) => (
@@ -191,7 +199,7 @@ export function MembersTable({
                         {isSelf ? <Badge tone="brand">You</Badge> : null}
                       </span>
                     </td>
-                    <td className="max-w-48 px-3 py-3 text-ink-2">
+                    <td className="hidden max-w-48 px-3 py-3 text-ink-2 sm:table-cell">
                       <span className="block truncate">
                         {member.name ?? "—"}
                       </span>
@@ -203,16 +211,16 @@ export function MembersTable({
                         {member.role}
                       </Badge>
                     </td>
-                    <td className="px-3 py-3 text-right font-mono text-ink-2 tabular-nums">
+                    <td className="hidden px-3 py-3 text-right font-mono text-ink-2 tabular-nums lg:table-cell">
                       {member.panelCount}
                     </td>
-                    <td className="px-3 py-3 text-right font-mono text-ink-2 tabular-nums">
+                    <td className="hidden px-3 py-3 text-right font-mono text-ink-2 tabular-nums lg:table-cell">
                       {member.addedCandidateCount}
                     </td>
-                    <td className="px-3 py-3 text-right font-mono text-ink-2 tabular-nums">
+                    <td className="hidden px-3 py-3 text-right font-mono text-ink-2 tabular-nums lg:table-cell">
                       {member.createdPanelCount}
                     </td>
-                    <td className="px-3 py-3 text-xs whitespace-nowrap text-ink-3">
+                    <td className="hidden px-3 py-3 text-xs whitespace-nowrap text-ink-3 lg:table-cell">
                       {relativeTime(member.createdAt)}
                     </td>
                     <td className="px-4 py-3">
@@ -235,7 +243,9 @@ export function MembersTable({
                               }}
                             >
                               <Shield className="size-3.5" />
-                              Make admin
+                              <span className="sr-only sm:not-sr-only">
+                                Make admin
+                              </span>
                             </Button>
                           ) : (
                             <Button
@@ -254,7 +264,9 @@ export function MembersTable({
                               }}
                             >
                               <UserRound className="size-3.5" />
-                              Make member
+                              <span className="sr-only sm:not-sr-only">
+                                Make member
+                              </span>
                             </Button>
                           )
                         ) : null}
@@ -268,6 +280,9 @@ export function MembersTable({
                             aria-label={`Delete ${member.rollNo}`}
                           >
                             <Trash2 className="size-3.5" />
+                            <span className="sr-only sm:not-sr-only">
+                              Delete
+                            </span>
                           </Button>
                         ) : null}
                       </div>

@@ -26,6 +26,9 @@ next-safe-action, PostHog and Vercel Analytics.
 - **Members** (`/admin/members`, admin only) — promote/demote/delete users (self-demotion
   and self-deletion are blocked server-side).
 - **Toasts, modals, confirm dialogs** and a consistent design-token UI kit.
+- **Mobile-friendly** — verified with real-browser audits from 320px up: icon-only nav
+  on phones, edge-to-edge swipeable kanban columns, admin tables that surface priority
+  columns and actions first, and 44px touch targets on every interactive control.
 - **Analytics** — PostHog heatmaps + autocapture (proxied through `/ingest` so no
   third-party cookies), PostHog **frequency** page views, server-side domain events
   captured out-of-band with `after()`, plus Vercel Analytics and Speed Insights.

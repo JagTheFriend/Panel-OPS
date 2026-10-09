@@ -60,7 +60,7 @@ export function Modal({
             aria-modal="true"
             aria-label={title}
             className={cn(
-              "relative z-10 w-full max-w-lg rounded-2xl border border-line bg-surface p-6 shadow-pop",
+              "relative z-10 w-full max-w-lg rounded-2xl border border-line bg-surface p-5 shadow-pop sm:p-6",
               "max-h-[85vh] overflow-y-auto",
               className,
             )}

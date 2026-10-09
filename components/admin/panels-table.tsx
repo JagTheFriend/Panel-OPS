@@ -38,10 +38,16 @@ export type ControlPanel = {
 
 const headings = [
   { label: "Panel", className: "px-4 py-2.5 text-left" },
-  { label: "Stations", className: "px-3 py-2.5 text-right" },
+  {
+    label: "Stations",
+    className: "hidden px-3 py-2.5 text-right sm:table-cell",
+  },
   { label: "Members", className: "px-3 py-2.5 text-left" },
-  { label: "Queue", className: "px-3 py-2.5 text-right" },
-  { label: "Created by", className: "px-3 py-2.5 text-left" },
+  { label: "Queue", className: "hidden px-3 py-2.5 text-right lg:table-cell" },
+  {
+    label: "Created by",
+    className: "hidden px-3 py-2.5 text-left lg:table-cell",
+  },
   { label: "Actions", className: "px-4 py-2.5 text-right" },
 ] as const;
 
@@ -118,7 +124,7 @@ export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-line bg-surface shadow-card">
-        <table className="w-full min-w-[820px] text-sm">
+        <table className="w-full min-w-[21rem] text-sm sm:min-w-[36rem] lg:min-w-[51rem]">
           <thead>
             <tr className="border-b border-line bg-surface-2/70 text-[11px] font-semibold tracking-wider text-ink-3 uppercase">
               {headings.map((heading) => (
@@ -147,7 +153,7 @@ export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
-                            "truncate text-[13px] font-semibold",
+                            "min-w-0 line-clamp-2 text-[13px] font-semibold sm:line-clamp-1",
                             panel.isActive ? "text-ink" : "text-ink-2",
                           )}
                         >
@@ -158,12 +164,12 @@ export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
                         ) : null}
                       </div>
                       {panel.description ? (
-                        <p className="mt-0.5 max-w-md truncate text-xs text-ink-3">
+                        <p className="mt-0.5 max-w-md line-clamp-2 text-xs text-ink-3 sm:line-clamp-1">
                           {panel.description}
                         </p>
                       ) : null}
                     </td>
-                    <td className="px-3 py-3 text-right font-mono text-ink-2 tabular-nums">
+                    <td className="hidden px-3 py-3 text-right font-mono text-ink-2 tabular-nums sm:table-cell">
                       {panel.seatCount}
                     </td>
                     <td className="px-3 py-3">
@@ -188,10 +194,10 @@ export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
                         <span className="sr-only">members of {panel.name}</span>
                       </button>
                     </td>
-                    <td className="px-3 py-3 text-right font-mono text-ink-2 tabular-nums">
+                    <td className="hidden px-3 py-3 text-right font-mono text-ink-2 tabular-nums lg:table-cell">
                       {panel.queueCount}
                     </td>
-                    <td className="px-3 py-3 font-mono text-xs text-ink-2">
+                    <td className="hidden px-3 py-3 font-mono text-xs text-ink-2 lg:table-cell">
                       {panel.createdByRollNo}
                     </td>
                     <td className="px-4 py-3">
@@ -203,7 +209,7 @@ export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
                           aria-label={`Edit ${panel.name}`}
                         >
                           <Pencil className="size-3.5" />
-                          Edit
+                          <span className="sr-only sm:not-sr-only">Edit</span>
                         </Button>
                         <Button
                           variant="ghost"
@@ -213,7 +219,7 @@ export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
                           aria-label={`Delete ${panel.name}`}
                         >
                           <Trash2 className="size-3.5" />
-                          Delete
+                          <span className="sr-only sm:not-sr-only">Delete</span>
                         </Button>
                       </div>
                     </td>

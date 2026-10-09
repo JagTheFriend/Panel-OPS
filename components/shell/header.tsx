@@ -68,15 +68,16 @@ export function Header({ user }: { user: HeaderUser }) {
                 <li key={link.href}>
                   <Link
                     href={link.href}
+                    title={link.label}
                     className={cn(
-                      "inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition-colors",
+                      "relative inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium whitespace-nowrap transition-colors sm:px-3",
                       active
                         ? "bg-brand-soft text-brand-ink"
                         : "text-ink-2 hover:bg-surface-2 hover:text-ink",
                     )}
                   >
                     <Icon className="size-4" />
-                    {link.label}
+                    <span className="sr-only sm:not-sr-only">{link.label}</span>
                   </Link>
                 </li>
               );
