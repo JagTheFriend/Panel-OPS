@@ -1,6 +1,8 @@
 import posthog from "posthog-js";
 
-const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+const key =
+  process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN ||
+  process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const host = process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
 const uiHost =
   process.env.NEXT_PUBLIC_POSTHOG_UI_HOST || "https://us.posthog.com";

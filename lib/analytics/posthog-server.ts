@@ -7,7 +7,11 @@ let client: PostHog | null = null;
 
 function getKey(): string | null {
   if (process.env.POSTHOG_DISABLED === "true") return null;
-  return process.env.NEXT_PUBLIC_POSTHOG_KEY || null;
+  return (
+    process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN ||
+    process.env.NEXT_PUBLIC_POSTHOG_KEY ||
+    null
+  );
 }
 
 function getClient(): PostHog | null {

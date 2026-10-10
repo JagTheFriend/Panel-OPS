@@ -20,6 +20,10 @@ cd "$ROOT"
 export DATABASE_URL="postgresql://ocpanelist:ocpanelist@localhost:5434/ocpanelist_test?schema=public"
 export DATABASE_URL_UNPOOLED="$DATABASE_URL"
 
+# Keep PostHog silent for e2e so test traffic never lands in the real project.
+export NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=""
+export NEXT_PUBLIC_POSTHOG_KEY=""
+
 echo "[e2e] resetting + seeding test database on 5434"
 npx tsx e2e/reset-db.ts
 npx prisma migrate deploy

@@ -145,7 +145,7 @@ See [`.env.example`](.env.example):
 | `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | pooled (app) + direct (migrations) Neon/local strings |
 | `SESSION_SECRET` | iron-session seal key, ≥ 32 chars (`openssl rand -hex 32`) |
 | `ROOM_PIN` / `ADMIN_PIN` | shared participant PIN / admin upgrade PIN |
-| `NEXT_PUBLIC_POSTHOG_KEY` / `_HOST` / `_UI_HOST` | PostHog project key + API/UI hosts (empty = no-op) |
+| `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` / `_KEY` / `_HOST` / `_UI_HOST` | PostHog project key (either name works) + API/UI hosts (empty = no-op) |
 
 ## Deploying (Vercel + Neon)
 
@@ -155,8 +155,9 @@ See [`.env.example`](.env.example):
    `ROOM_PIN`/`ADMIN_PIN` — change them from the local defaults). The `vercel-build`
    script runs `prisma generate && prisma migrate deploy && next build`.
 3. Enable Web Analytics and Speed Insights in the Vercel dashboard (no env needed).
-4. Set the PostHog key/host if you want heatmaps + frequency analytics; the browser SDK
-   reports through the `/ingest` rewrite in `next.config.ts` for cookie-free tracking.
+4. Set `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` (and host, if not using the US cloud) if you
+   want heatmaps + frequency analytics; the browser SDK reports through the `/ingest`
+   rewrite in `next.config.ts` for cookie-free tracking.
 
 ## Project layout
 
