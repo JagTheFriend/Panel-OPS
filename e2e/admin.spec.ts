@@ -109,8 +109,8 @@ test.describe("control room", () => {
       selfRow.getByRole("button", { name: `Delete ${ADMIN_ROLL}` }),
     ).toHaveCount(0);
 
-    await page.getByLabel("Search members").fill("COORD001");
-    const memberRow = page.getByRole("row").filter({ hasText: "COORD001" });
+    await page.getByLabel("Search members").fill("9002");
+    const memberRow = page.getByRole("row").filter({ hasText: "9002" });
     await expect(memberRow).toBeVisible();
 
     await memberRow.getByRole("button", { name: "Make admin" }).click();

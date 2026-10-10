@@ -12,24 +12,31 @@ import {
 } from "@/lib/schemas";
 
 describe("rollNoSchema", () => {
-  it("accepts typical roll numbers and trims whitespace", () => {
-    expect(rollNoSchema.parse("  CS-01_2.a ")).toBe("CS-01_2.a");
-    expect(rollNoSchema.parse("ADMIN001")).toBe("ADMIN001");
+  it("accepts numeric roll numbers and trims whitespace", () => {
+    expect(rollNoSchema.parse("  210042 ")).toBe("210042");
+    expect(rollNoSchema.parse("9001")).toBe("9001");
   });
 
-  it("rejects short, long, or malformed roll numbers", () => {
-    expect(rollNoSchema.safeParse("ab").success).toBe(false);
-    expect(rollNoSchema.safeParse("a".repeat(21)).success).toBe(false);
+  it("rejects short, long, or non-numeric roll numbers", () => {
+    expect(rollNoSchema.safeParse("12").success).toBe(false);
+    expect(rollNoSchema.safeParse("1".repeat(21)).success).toBe(false);
+    expect(rollNoSchema.safeParse("ADMIN001").success).toBe(false);
     expect(rollNoSchema.safeParse("has space").success).toBe(false);
-    expect(rollNoSchema.safeParse("semi;colon").success).toBe(false);
     expect(rollNoSchema.safeParse("").success).toBe(false);
   });
 
   it("surfaces friendly error messages", () => {
-    const result = rollNoSchema.safeParse("ab");
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues[0].message).toBe("Roll number is too short");
+    const short = rollNoSchema.safeParse("12");
+    expect(short.success).toBe(false);
+    if (!short.success) {
+      expect(short.error.issues[0].message).toBe("Roll number is too short");
+    }
+    const letters = rollNoSchema.safeParse("AB1234");
+    expect(letters.success).toBe(false);
+    if (!letters.success) {
+      expect(letters.error.issues[0].message).toBe(
+        "Roll number can only contain numbers",
+      );
     }
   });
 });
@@ -47,31 +54,44 @@ describe("pinSchema", () => {
 });
 
 describe("joinRoomSchema", () => {
-  it("defaults panelIds to an empty array", () => {
-    const result = joinRoomSchema.safeParse({
-      rollNo: "ADMIN001",
+  it("requires a name and keeps panelIds optional at the schema level", () => {
+    const missingName = joinRoomSchema.safeParse({
+      rollNo: "9001",
       pin: "7331",
+    });
+    expect(missingName.success).toBe(false);
+
+    const result = joinRoomSchema.safeParse({
+      rollNo: "9001",
+      pin: "7331",
+      name: "Diya Patel",
+      panelIds: [],
     });
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.panelIds).toEqual([]);
-      expect(result.data.name).toBeUndefined();
+      expect(result.data.name).toBe("Diya Patel");
     }
   });
 
   it("rejects an oversized panelIds list", () => {
     const result = joinRoomSchema.safeParse({
-      rollNo: "ADMIN001",
+      rollNo: "9001",
       pin: "7331",
+      name: "Diya Patel",
       panelIds: Array.from({ length: 26 }, (_, i) => `p${i}`),
     });
     expect(result.success).toBe(false);
   });
 
   it("requires a valid roll number", () => {
-    expect(joinRoomSchema.safeParse({ rollNo: "x", pin: "1234" }).success).toBe(
-      false,
-    );
+    expect(
+      joinRoomSchema.safeParse({
+        rollNo: "x1",
+        pin: "1234",
+        name: "Diya Patel",
+      }).success,
+    ).toBe(false);
   });
 });
 
@@ -181,7 +201,7 @@ describe("setUserRoleSchema", () => {
 describe("addCandidateSchema", () => {
   it("accepts a roll without a name", () => {
     expect(
-      addCandidateSchema.safeParse({ panelId: "p1", rollNo: "CS001" }).success,
+      addCandidateSchema.safeParse({ panelId: "p1", rollNo: "1001" }).success,
     ).toBe(true);
   });
 

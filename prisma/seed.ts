@@ -6,15 +6,15 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const admin = await prisma.user.upsert({
-    where: { rollNo: "ADMIN001" },
+    where: { rollNo: "9001" },
     update: { role: "ADMIN" },
-    create: { rollNo: "ADMIN001", name: "Admin Coordinator", role: "ADMIN" },
+    create: { rollNo: "9001", name: "Admin Coordinator", role: "ADMIN" },
   });
 
   const coordinator = await prisma.user.upsert({
-    where: { rollNo: "COORD001" },
+    where: { rollNo: "9002" },
     update: {},
-    create: { rollNo: "COORD001", name: "Room Coordinator", role: "USER" },
+    create: { rollNo: "9002", name: "Room Coordinator", role: "USER" },
   });
 
   const panelsData = [
@@ -62,20 +62,20 @@ async function main() {
   if (webPanel.candidates.length === 0) {
     const samples = [
       {
-        rollNo: "21CS0011",
+        rollNo: "1011",
         name: "Aarav Sharma",
         status: "IN_INTERVIEW" as const,
         seatNumber: 1,
       },
       {
-        rollNo: "21CS0042",
+        rollNo: "1042",
         name: "Diya Patel",
         status: "IN_INTERVIEW" as const,
         seatNumber: 2,
       },
-      { rollNo: "21CS0075", name: "Rohan Kumar", status: "WAITING" as const },
-      { rollNo: "21CS0088", name: "Ananya Singh", status: "WAITING" as const },
-      { rollNo: "21CS0103", name: "Kabir Mehta", status: "DONE" as const },
+      { rollNo: "1075", name: "Rohan Kumar", status: "WAITING" as const },
+      { rollNo: "1088", name: "Ananya Singh", status: "WAITING" as const },
+      { rollNo: "1103", name: "Kabir Mehta", status: "DONE" as const },
     ];
 
     let position = 0;

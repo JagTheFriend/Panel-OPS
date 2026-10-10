@@ -22,6 +22,8 @@ test.describe("authentication", () => {
   test("an incorrect PIN shows an error", async ({ page }) => {
     await page.goto("/join");
     await page.getByLabel("Roll number", { exact: true }).fill(uniqueRoll());
+    await page.getByLabel("Name", { exact: true }).fill("Wrong Pin User");
+    await page.locator('input[type="checkbox"]').first().check();
     await page.getByLabel("Room PIN", { exact: true }).fill("0000");
     await page.getByRole("button", { name: "Enter the room" }).click();
 

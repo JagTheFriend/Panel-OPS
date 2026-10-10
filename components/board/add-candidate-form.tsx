@@ -96,12 +96,16 @@ export function AddCandidateForm({
             ref={rollRef}
             id="candidate-roll"
             name="rollNo"
-            placeholder="21CS0042"
+            placeholder="1042"
             autoComplete="off"
-            autoCapitalize="characters"
+            autoCapitalize="none"
+            inputMode="numeric"
+            pattern="[0-9]*"
             spellCheck={false}
             value={rollNo}
-            onChange={(event) => setRollNo(event.target.value)}
+            onChange={(event) =>
+              setRollNo(event.target.value.replace(/\D+/g, ""))
+            }
             disabled={closed || isExecuting}
             maxLength={20}
             required

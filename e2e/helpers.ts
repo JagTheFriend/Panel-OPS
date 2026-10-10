@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
-export const ADMIN_ROLL = "ADMIN001";
+export const ADMIN_ROLL = "9001";
 export const ADMIN_PIN = "7331";
 export const ROOM_PIN = "1234";
 
@@ -12,16 +12,17 @@ export const DIRECTORY_PANEL = "DevOps & Cloud";
 let sequence = 0;
 
 /**
- * Collision-free token for rolls, names and panel names created by tests.
- * Keeps roll numbers inside the app's 3–20 character limit.
+ * Collision-free token for names and panel names created by tests.
  */
 export function uniqueToken(prefix: string): string {
   sequence += 1;
   return `${prefix}${Date.now().toString(36)}${sequence.toString(36)}`;
 }
 
+/** Collision-free numeric roll (roll numbers are digits only). */
 export function uniqueRoll(): string {
-  return uniqueToken("E2E");
+  sequence += 1;
+  return `${Date.now()}${sequence}`;
 }
 
 /** Fills the join form and waits until the session lands on /board. */
@@ -33,10 +34,14 @@ export async function joinRoom(
 ): Promise<void> {
   await page.goto("/join");
   await page.getByLabel("Roll number", { exact: true }).fill(rollNo);
-  if (name) {
-    await page.getByLabel("Name", { exact: true }).fill(name);
-  }
+  await page
+    .getByLabel("Name", { exact: true })
+    .fill(name ?? uniqueToken("User "));
   await page.getByLabel("Room PIN", { exact: true }).fill(pin);
+  const firstDomain = page.locator('input[type="checkbox"]').first();
+  if (await firstDomain.count()) {
+    await firstDomain.check();
+  }
   await page.getByRole("button", { name: "Enter the room" }).click();
   await expect(page).toHaveURL(/\/board$/);
 }

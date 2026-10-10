@@ -3,12 +3,9 @@ import { z } from "zod";
 export const rollNoSchema = z
   .string()
   .trim()
+  .regex(/^\d+$/, "Roll number can only contain numbers")
   .min(3, "Roll number is too short")
-  .max(20, "Roll number is too long")
-  .regex(
-    /^[A-Za-z0-9._-]+$/,
-    "Only letters, numbers, dot, dash and underscore",
-  );
+  .max(20, "Roll number is too long");
 
 export const pinSchema = z
   .string()
@@ -19,8 +16,8 @@ export const pinSchema = z
 export const joinRoomSchema = z.object({
   rollNo: rollNoSchema,
   pin: pinSchema,
-  name: z.string().trim().min(1).max(60).optional(),
-  panelIds: z.array(z.string()).max(25).default([]),
+  name: z.string().trim().min(1, "Name is required").max(60),
+  panelIds: z.array(z.string()).max(25),
 });
 
 export const createPanelSchema = z.object({

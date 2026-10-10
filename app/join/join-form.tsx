@@ -11,13 +11,19 @@ type JoinPanelOption = { id: string; name: string; description: string | null };
 
 export function JoinForm({ panels }: { panels: JoinPanelOption[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [showDomains, setShowDomains] = useState(panels.length <= 6);
+  const [showDomains, setShowDomains] = useState(true);
 
   const { execute, isExecuting, result } = useAction(joinRoom);
 
   const rollNoError = result?.validationErrors?.rollNo?._errors?.[0];
+  const nameError = result?.validationErrors?.name?._errors?.[0];
   const pinError = result?.validationErrors?.pin?._errors?.[0];
+  const domainsField = result?.validationErrors?.panelIds as
+    | { _errors?: string[] }
+    | undefined;
+  const domainsError = domainsField?._errors?.[0];
   const serverError = result?.serverError?.message;
+  const domainsMissing = panels.length > 0 && selected.size === 0;
 
   const toggle = (id: string) => {
     setSelected((current) => {
@@ -35,8 +41,8 @@ export function JoinForm({ panels }: { panels: JoinPanelOption[] }) {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
         execute({
-          rollNo: String(form.get("rollNo") ?? ""),
-          name: String(form.get("name") ?? "") || undefined,
+          rollNo: String(form.get("rollNo") ?? "").trim(),
+          name: String(form.get("name") ?? "").trim(),
           pin: String(form.get("pin") ?? ""),
           panelIds: Array.from(selected),
         });
@@ -47,24 +53,31 @@ export function JoinForm({ panels }: { panels: JoinPanelOption[] }) {
           <Input
             id="rollNo"
             name="rollNo"
-            placeholder="21CS0042"
+            placeholder="210042"
             autoComplete="username"
-            autoCapitalize="characters"
+            autoCapitalize="none"
+            inputMode="numeric"
+            pattern="[0-9]*"
             spellCheck={false}
             required
             autoFocus
+            onChange={(event) => {
+              event.target.value = event.target.value.replace(/\D+/g, "");
+            }}
           />
         </Field>
         <Field
           label="Name"
           htmlFor="name"
-          hint="Optional — helps coordinators identify you"
+          hint="Shown to coordinators on the board"
+          error={nameError}
         >
           <Input
             id="name"
             name="name"
             placeholder="Diya Patel"
             autoComplete="name"
+            required
           />
         </Field>
       </div>
@@ -100,11 +113,21 @@ export function JoinForm({ panels }: { panels: JoinPanelOption[] }) {
             <span>
               Domains you are joining{" "}
               <span className="text-ink-3">
-                ({selected.size} selected — optional)
+                ({selected.size} selected
+                {selected.size === 0 ? " — pick at least one" : ""})
               </span>
             </span>
             <span className="text-ink-3">{showDomains ? "−" : "+"}</span>
           </button>
+
+          {domainsError ? (
+            <p
+              role="alert"
+              className="mt-2 rounded-lg border border-danger/25 bg-danger-soft px-3 py-2 text-sm text-danger-ink"
+            >
+              {domainsError}
+            </p>
+          ) : null}
 
           {showDomains ? (
             <div className="mt-3 grid max-h-52 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
@@ -158,7 +181,7 @@ export function JoinForm({ panels }: { panels: JoinPanelOption[] }) {
         size="lg"
         className="w-full"
         loading={isExecuting}
-        disabled={isExecuting}
+        disabled={isExecuting || domainsMissing}
       >
         {isExecuting ? (
           <>

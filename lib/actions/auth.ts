@@ -27,6 +27,19 @@ export const joinRoom = actionClient
 
     const desiredRole: Role = isAdminPin ? "ADMIN" : "USER";
 
+    // Picking domains is required whenever any panel is open; only when the
+    // room is completely empty can somebody check in without a selection.
+    if (panelIds.length === 0) {
+      const activePanels = await prisma.panel.count({
+        where: { isActive: true },
+      });
+      if (activePanels > 0) {
+        returnValidationErrors(joinRoomSchema, {
+          panelIds: { _errors: ["Pick at least one domain"] },
+        });
+      }
+    }
+
     const panels = panelIds.length
       ? await prisma.panel.findMany({
           where: { id: { in: panelIds }, isActive: true },

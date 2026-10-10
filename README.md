@@ -69,10 +69,10 @@ Seeded logins (local only):
 
 | Roll      | PIN    | Role  |
 | --------- | ------ | ----- |
-| `ADMIN001`| `7331` | ADMIN |
-| any roll  | `1234` | USER (new rolls are created on first join) |
+| `9001`    | `7331` | ADMIN |
+| any numeric roll | `1234` | USER (new rolls are created on first join; name + at least one domain are required) |
 
-`COORD001` exists as a regular user for role-flip testing.
+`9002` exists as a regular user for role-flip testing.
 
 ## Scripts
 
