@@ -1,8 +1,8 @@
 # PanelOps
 
 A campus-recruitment **panel & domain status tracker**. Interview panels ("domains") are
-kanban boards with physical **station/seat occupancy** — participants wait in a queue,
-get seated at a free station for their interview, and move to done when finished.
+kanban boards — participants wait in a queue, get called for their interview, and move to
+done when finished.
 
 Built with Next.js 16 (App Router, PPR, Server Actions), Prisma 7 + Neon, Tailwind v4,
 next-safe-action, PostHog and Vercel Analytics.
@@ -13,16 +13,15 @@ next-safe-action, PostHog and Vercel Analytics.
   (unknown roll numbers are onboarded automatically); the admin PIN upgrades you to the
   `ADMIN` role. Sessions are httpOnly iron-session cookies, optimistically gated in
   `proxy.ts` so protected routes redirect with a real `307` before any rendering.
-- **Live board overview** (`/board`) — every panel you belong to, with queue depth,
-  station utilisation and auto-refreshing stats (4s `router.refresh()` polling).
+- **Live board overview** (`/board`) — every panel you belong to, with queue depth
+  and live waiting/in-interview/done counts.
 - **Kanban per panel** (`/board/[panelId]`) — Waiting → In interview → Done columns with
   drag & drop (dnd-kit) *and* explicit Start/Done/Reopen buttons, elapsed interview
-  timers, completion durations, and a **station grid** that shows which numbered seats
-  are occupied in real time.
+  timers, and completion durations.
 - **Panels directory** (`/panels`) — searchable list of active domains; join/leave and
   jump straight into the board.
 - **Control room** (`/admin/panels`, admin only) — create/edit/archive/delete panels,
-  manage seats per panel, and remove members from panels.
+  manage members per panel, and remove members from panels.
 - **Members** (`/admin/members`, admin only) — promote/demote/delete users (self-demotion
   and self-deletion are blocked server-side).
 - **Toasts, modals, confirm dialogs** and a consistent design-token UI kit.
@@ -94,13 +93,13 @@ Seeded logins (local only):
 
 ## Testing
 
-- **Unit/component (`npm test`)** — pure domain logic in `lib/logic` (station
-  occupancy + status transitions), every shared zod schema, formatting utils, and UI
-  primitives (Button, ToastProvider). 51 tests.
+- **Unit/component (`npm test`)** — pure domain logic in `lib/logic` (status
+  transitions), every shared zod schema, formatting utils, and UI
+  primitives (Button, ToastProvider).
 - **E2E (`npm run test:e2e`)** — fully self-contained: a `webServer` script resets and
   seeds the **dedicated test database on :5434**, builds the app and serves it on
   **port 3110**, then runs Chromium specs covering auth/redirects, the full kanban
-  lifecycle (add → start → seat claimed → done → reopen → remove), directory
+  lifecycle (add → start → done → reopen → remove), directory
   join/leave/search, and admin panel CRUD + role management. It never touches your dev
   server (:3100) or dev database (:5433).
 
@@ -110,13 +109,13 @@ Seeded logins (local only):
 proxy.ts ── optimistic gate: valid session cookie? → 307 to /join before render
    │
 app/(app)/layout.tsx ── Suspense-holed session check (defense in depth; keeps
-   │                    PPR static shell + streaming) + header/nav + LiveRefresh
+   │                    PPR static shell + streaming) + header/nav
    │
 lib/safe-action.ts ── actionClient / authedClient / adminClient (next-safe-action,
    │                  Zod input schemas from lib/schemas.ts, ActionError codes)
    │
 lib/actions/* ── panels, candidates, members, users — authorization +
-   │             transactional seat/position bookkeeping
+   │             transactional position bookkeeping
    │
 lib/logic/candidates.ts ── pure transition rules (unit tested, no I/O)
 lib/data/queries.ts ── all reads (board overview, panel board, directory, admin)
@@ -130,8 +129,8 @@ Key decisions worth knowing:
   re-validates the session against the database once data loads.
 - **Server actions must live in `"use server"` files**; `redirect()` re-throws through
   next-safe-action and is handled by the client hooks (`useAction`).
-- **Board freshness** is SSR + polling (`router.refresh()` every 4s) — no WebSocket
-  layer, no client state duplication; the server is the source of truth.
+- **Board freshness** is SSR + server actions calling `router.refresh()` — no WebSocket
+  layer, no client state duplication, no polling; the server is the source of truth.
 - **PostHog server events** are queued inside `after()` so tracking never delays a
   response; distinct id is `roll:<rollNo>` so product analytics ties back to a person
   without shipping PII to a third party beyond the roll number already in the session.

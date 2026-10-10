@@ -17,7 +17,6 @@ function PanelFormFields({
   defaults,
   nameError,
   descriptionError,
-  seatCountError,
   active,
   onActiveChange,
 }: {
@@ -25,11 +24,9 @@ function PanelFormFields({
   defaults?: {
     name: string;
     description: string | null;
-    seatCount: number;
   };
   nameError?: string;
   descriptionError?: string;
-  seatCountError?: string;
   active?: boolean;
   onActiveChange?: (value: boolean) => void;
 }) {
@@ -65,26 +62,6 @@ function PanelFormFields({
           defaultValue={defaults?.description ?? ""}
           placeholder="React and Node queues, mixed panels"
           maxLength={300}
-        />
-      </Field>
-
-      <Field
-        label="Stations"
-        htmlFor={`${idPrefix}-seatCount`}
-        error={seatCountError}
-        hint="Interview stations running in parallel (1–30)"
-      >
-        <Input
-          id={`${idPrefix}-seatCount`}
-          name="seatCount"
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={30}
-          step={1}
-          defaultValue={defaults?.seatCount ?? 6}
-          required
-          className="max-w-32"
         />
       </Field>
 
@@ -160,7 +137,6 @@ export function CreatePanelModal({
 
   const nameError = result?.validationErrors?.name?._errors?.[0];
   const descriptionError = result?.validationErrors?.description?._errors?.[0];
-  const seatCountError = result?.validationErrors?.seatCount?._errors?.[0];
 
   return (
     <Modal
@@ -188,7 +164,6 @@ export function CreatePanelModal({
           execute({
             name: String(form.get("name") ?? ""),
             description: String(form.get("description") ?? "") || undefined,
-            seatCount: Number(form.get("seatCount") ?? 6),
           });
         }}
       >
@@ -196,7 +171,6 @@ export function CreatePanelModal({
           idPrefix="create"
           nameError={nameError}
           descriptionError={descriptionError}
-          seatCountError={seatCountError}
         />
 
         <FormError message={result?.serverError?.message} />
@@ -252,7 +226,6 @@ export function EditPanelModal({
 
   const nameError = result?.validationErrors?.name?._errors?.[0];
   const descriptionError = result?.validationErrors?.description?._errors?.[0];
-  const seatCountError = result?.validationErrors?.seatCount?._errors?.[0];
 
   return (
     <Modal
@@ -287,7 +260,6 @@ export function EditPanelModal({
             id: panel.id,
             name: String(form.get("name") ?? ""),
             description: String(form.get("description") ?? "") || undefined,
-            seatCount: Number(form.get("seatCount") ?? 6),
             isActive,
           });
         }}
@@ -299,13 +271,11 @@ export function EditPanelModal({
               ? {
                   name: panel.name,
                   description: panel.description,
-                  seatCount: panel.seatCount,
                 }
               : undefined
           }
           nameError={nameError}
           descriptionError={descriptionError}
-          seatCountError={seatCountError}
           active={isActive}
           onActiveChange={
             panel

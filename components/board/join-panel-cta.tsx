@@ -68,8 +68,8 @@ export function JoinPanelCta({
             You are not a member of this panel
           </h2>
           <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-2">
-            Join to see the queue, claim stations and follow interviews as they
-            happen on the room display.
+            Join to see the queue and follow interviews as they happen on the
+            room display.
           </p>
 
           {error ? (

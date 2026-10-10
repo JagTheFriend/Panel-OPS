@@ -104,7 +104,7 @@ export function PanelMembers({ panel }: { panel: ControlPanel }) {
         title={target ? `Remove ${target.rollNo}?` : "Remove member"}
         description={
           target
-            ? `${target.name ?? target.rollNo} will lose their seat on ${panel.name}. They can rejoin from the directory at any time.`
+            ? `${target.name ?? target.rollNo} will lose access to ${panel.name}. They can rejoin from the directory at any time.`
             : undefined
         }
         confirmLabel="Remove member"

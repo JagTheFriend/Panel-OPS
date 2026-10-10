@@ -7,10 +7,8 @@ import { ActionError } from "@/lib/errors";
 import {
   applyStatusTransition,
   type CandidateStatus,
-  nextFreeSeat,
-  occupiedSeats,
 } from "@/lib/logic/candidates";
-import { authedClient } from "@/lib/safe-action";
+import { adminClient, authedClient } from "@/lib/safe-action";
 import {
   addCandidateSchema,
   candidateStatusSchema,
@@ -23,7 +21,7 @@ function orderByPosition() {
   return [{ position: "asc" as const }, { joinedAt: "asc" as const }];
 }
 
-export const addCandidate = authedClient
+export const addCandidate = adminClient
   .inputSchema(addCandidateSchema)
   .action(async ({ parsedInput, ctx }) => {
     const { panelId, rollNo, name } = parsedInput;
@@ -75,7 +73,7 @@ export const addCandidate = authedClient
 
 /**
  * Moves a candidate between columns (with optional insert index) and keeps
- * station occupancy + kanban ordering consistent in one transaction.
+ * kanban ordering consistent in one transaction.
  */
 async function moveCandidate(
   candidateId: string,
@@ -84,7 +82,6 @@ async function moveCandidate(
 ) {
   const candidate = await prisma.candidate.findUnique({
     where: { id: candidateId },
-    include: { panel: true },
   });
   if (!candidate) {
     throw new ActionError("NOT_FOUND", "Candidate not found.");
@@ -95,12 +92,7 @@ async function moveCandidate(
     where: { panelId: candidate.panelId },
   });
 
-  const taken = occupiedSeats(all.filter((c) => c.id !== candidate.id));
-  const transition = applyStatusTransition(
-    candidate,
-    toStatus,
-    nextFreeSeat(taken, candidate.panel.seatCount),
-  );
+  const transition = applyStatusTransition(candidate, toStatus);
   if (!transition.ok) {
     throw new ActionError("CONFLICT", transition.error);
   }
@@ -246,7 +238,7 @@ export const updateCandidate = authedClient
     return { id };
   });
 
-export const removeCandidate = authedClient
+export const removeCandidate = adminClient
   .inputSchema(removeCandidateSchema)
   .action(async ({ parsedInput, ctx }) => {
     const candidate = await prisma.candidate.findUnique({

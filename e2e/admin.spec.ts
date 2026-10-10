@@ -30,7 +30,6 @@ test.describe("control room", () => {
     await createDialog
       .getByLabel("Description", { exact: true })
       .fill(description);
-    await createDialog.getByLabel("Stations", { exact: true }).fill("4");
     await createDialog.getByRole("button", { name: "Create panel" }).click();
 
     await expect(
@@ -38,7 +37,6 @@ test.describe("control room", () => {
     ).toBeVisible();
     const row = page.getByRole("row").filter({ hasText: panelName });
     await expect(row).toBeVisible();
-    await expect(row.locator("td").nth(1)).toHaveText("4");
 
     await page.getByRole("button", { name: `Edit ${panelName}` }).click();
     const editDialog = page.getByRole("dialog", { name: panelName });
@@ -46,7 +44,6 @@ test.describe("control room", () => {
     await editDialog
       .getByLabel("Description", { exact: true })
       .fill(editedDescription);
-    await editDialog.getByLabel("Stations", { exact: true }).fill("7");
     await editDialog.getByRole("button", { name: "Save changes" }).click();
 
     await expect(
@@ -56,7 +53,6 @@ test.describe("control room", () => {
     await expect(
       page.getByRole("row").filter({ hasText: editedDescription }),
     ).toBeVisible();
-    await expect(row.locator("td").nth(1)).toHaveText("7");
 
     await row.getByRole("button", { name: `members of ${panelName}` }).click();
     await expect(page.getByText("Creator", { exact: true })).toBeVisible();

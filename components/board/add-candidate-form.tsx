@@ -85,7 +85,7 @@ export function AddCandidateForm({
           <p className="text-xs text-ink-3">
             {closed
               ? "This panel is paused for new check-ins."
-              : "Queue somebody for the next free slot."}
+              : "Queue somebody for the next slot."}
           </p>
         </div>
       </div>

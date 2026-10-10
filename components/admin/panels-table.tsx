@@ -21,7 +21,6 @@ export type ControlPanel = {
   id: string;
   name: string;
   description: string | null;
-  seatCount: number;
   isActive: boolean;
   createdById: string;
   createdByRollNo: string;
@@ -38,10 +37,6 @@ export type ControlPanel = {
 
 const headings = [
   { label: "Panel", className: "px-4 py-2.5 text-left" },
-  {
-    label: "Stations",
-    className: "hidden px-3 py-2.5 text-right sm:table-cell",
-  },
   { label: "Members", className: "px-3 py-2.5 text-left" },
   { label: "Queue", className: "hidden px-3 py-2.5 text-right lg:table-cell" },
   {
@@ -88,7 +83,7 @@ export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
         <EmptyState
           icon={<Plus className="size-5" />}
           title="No panels yet"
-          description="Create the first domain panel to start routing candidates to stations."
+          description="Create the first domain panel to start routing candidates through the queue."
           action={
             <Button onClick={() => setCreateOpen(true)}>New panel</Button>
           }
@@ -168,9 +163,6 @@ export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
                           {panel.description}
                         </p>
                       ) : null}
-                    </td>
-                    <td className="hidden px-3 py-3 text-right font-mono text-ink-2 tabular-nums sm:table-cell">
-                      {panel.seatCount}
                     </td>
                     <td className="px-3 py-3">
                       <button

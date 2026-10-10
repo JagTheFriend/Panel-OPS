@@ -28,7 +28,6 @@ export type BoardCandidate = {
   rollNo: string;
   name: string | null;
   status: CandidateStatus;
-  seatNumber: number | null;
   joinedAt: Date;
   startedAt: Date | null;
   completedAt: Date | null;
@@ -138,23 +137,25 @@ export function CandidateCard({
           >
             <Pencil className="size-3.5" />
           </button>
-          <button
-            type="button"
-            aria-label={`Remove ${candidate.rollNo}`}
-            disabled={!interactive}
-            onClick={(event) => {
-              event.stopPropagation();
-              setConfirmingRemoval(true);
-            }}
-            onPointerDown={stopEvent}
-            onKeyDown={stopEvent}
-            className={cn(
-              "flex size-7 items-center justify-center rounded-lg text-ink-3 transition hover:bg-danger-soft hover:text-danger-ink disabled:opacity-45",
-              overlay && "disabled:opacity-100",
-            )}
-          >
-            <Trash2 className="size-3.5" />
-          </button>
+          {onRemove ? (
+            <button
+              type="button"
+              aria-label={`Remove ${candidate.rollNo}`}
+              disabled={!interactive}
+              onClick={(event) => {
+                event.stopPropagation();
+                setConfirmingRemoval(true);
+              }}
+              onPointerDown={stopEvent}
+              onKeyDown={stopEvent}
+              className={cn(
+                "flex size-7 items-center justify-center rounded-lg text-ink-3 transition hover:bg-danger-soft hover:text-danger-ink disabled:opacity-45",
+                overlay && "disabled:opacity-100",
+              )}
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -323,11 +324,8 @@ function buildMeta(candidate: BoardCandidate, duration: string | null) {
   if (candidate.status === "IN_INTERVIEW") {
     return (
       <>
-        <Badge tone="live" dot>
-          Station {candidate.seatNumber ?? "—"}
-        </Badge>
         {candidate.startedAt ? (
-          <Badge tone="neutral" title="Interview elapsed time">
+          <Badge tone="live" title="Interview elapsed time">
             <Timer className="size-3" />
             <ElapsedTimer startedAt={candidate.startedAt} />
           </Badge>

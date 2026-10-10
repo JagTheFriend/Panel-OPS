@@ -21,29 +21,25 @@ async function main() {
     {
       name: "Web Development",
       description: "Frontend, backend & full-stack roles",
-      seatCount: 6,
     },
     {
       name: "Data Science",
       description: "ML, analytics and data engineering",
-      seatCount: 4,
     },
     {
       name: "UI/UX Design",
       description: "Product design & research",
-      seatCount: 3,
     },
     {
       name: "DevOps & Cloud",
       description: "Infrastructure, CI/CD and SRE",
-      seatCount: 4,
     },
   ] as const;
 
   for (const data of panelsData) {
     const panel = await prisma.panel.upsert({
       where: { name: data.name },
-      update: { seatCount: data.seatCount, description: data.description },
+      update: { description: data.description },
       create: { ...data, createdById: admin.id },
     });
 
@@ -65,13 +61,11 @@ async function main() {
         rollNo: "1011",
         name: "Aarav Sharma",
         status: "IN_INTERVIEW" as const,
-        seatNumber: 1,
       },
       {
         rollNo: "1042",
         name: "Diya Patel",
         status: "IN_INTERVIEW" as const,
-        seatNumber: 2,
       },
       { rollNo: "1075", name: "Rohan Kumar", status: "WAITING" as const },
       { rollNo: "1088", name: "Ananya Singh", status: "WAITING" as const },

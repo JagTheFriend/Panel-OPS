@@ -15,7 +15,6 @@ export type DirectoryPanel = {
   id: string;
   name: string;
   description: string | null;
-  seatCount: number;
   memberCount: number;
   queueCount: number;
   joined: boolean;
@@ -93,8 +92,7 @@ export function DirectoryPanelCard({ panel }: { panel: DirectoryPanel }) {
         ) : null}
       </div>
 
-      <div className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-line bg-line">
-        <PanelStat label="Stations" value={panel.seatCount} />
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line">
         <PanelStat label="Members" value={panel.memberCount} />
         <PanelStat label="In queue" value={panel.queueCount} />
       </div>

@@ -16,7 +16,7 @@ import {
 export const createPanel = adminClient
   .inputSchema(createPanelSchema)
   .action(async ({ parsedInput, ctx }) => {
-    const { name, description, seatCount } = parsedInput;
+    const { name, description } = parsedInput;
 
     const existing = await prisma.panel.findUnique({ where: { name } });
     if (existing) {
@@ -29,7 +29,6 @@ export const createPanel = adminClient
       data: {
         name,
         description: description || null,
-        seatCount,
         createdById: ctx.user.id,
       },
     });
@@ -42,7 +41,6 @@ export const createPanel = adminClient
     trackDomainEvent(ctx.user, "panel created", {
       panel_id: panel.id,
       panel_name: panel.name,
-      seat_count: panel.seatCount,
     });
 
     return { id: panel.id };
@@ -51,7 +49,7 @@ export const createPanel = adminClient
 export const updatePanel = adminClient
   .inputSchema(updatePanelSchema)
   .action(async ({ parsedInput, ctx }) => {
-    const { id, name, description, seatCount, isActive } = parsedInput;
+    const { id, name, description, isActive } = parsedInput;
 
     const panel = await prisma.panel.findUnique({ where: { id } });
     if (!panel) {
@@ -67,30 +65,15 @@ export const updatePanel = adminClient
       }
     }
 
-    // Shrinking seats must never orphan candidates already in interview.
-    if (seatCount < panel.seatCount) {
-      const inInterview = await prisma.candidate.count({
-        where: { panelId: id, status: "IN_INTERVIEW" },
-      });
-      if (seatCount < inInterview) {
-        returnValidationErrors(updatePanelSchema, {
-          seatCount: {
-            _errors: [`${inInterview} stations are currently occupied.`],
-          },
-        });
-      }
-    }
-
     const updated = await prisma.panel.update({
       where: { id },
-      data: { name, description: description || null, seatCount, isActive },
+      data: { name, description: description || null, isActive },
     });
 
     trackDomainEvent(ctx.user, "panel updated", {
       panel_id: id,
       panel_name: updated.name,
       is_active: updated.isActive,
-      seat_count: updated.seatCount,
     });
 
     return { id: updated.id };

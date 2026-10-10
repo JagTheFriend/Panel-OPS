@@ -96,32 +96,20 @@ describe("joinRoomSchema", () => {
 });
 
 describe("createPanelSchema", () => {
-  it("coerces a string seatCount to an integer", () => {
+  it("accepts a name and optional description", () => {
     const result = createPanelSchema.safeParse({
       name: "Web Development",
-      seatCount: "6",
+      description: "Frontend queue",
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.seatCount).toBe(6);
-      expect(result.data.description).toBeUndefined();
+      expect(result.data.name).toBe("Web Development");
+      expect(result.data.description).toBe("Frontend queue");
     }
   });
 
-  it("rejects out-of-range or fractional seat counts", () => {
-    expect(
-      createPanelSchema.safeParse({ name: "AI", seatCount: 0 }).success,
-    ).toBe(false);
-    expect(
-      createPanelSchema.safeParse({ name: "AI", seatCount: 31 }).success,
-    ).toBe(false);
-    expect(
-      createPanelSchema.safeParse({ name: "AI", seatCount: 2.5 }).success,
-    ).toBe(false);
-  });
-
   it("rejects a too-short domain name", () => {
-    const result = createPanelSchema.safeParse({ name: "a", seatCount: 6 });
+    const result = createPanelSchema.safeParse({ name: "a" });
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues[0].message).toBe("Domain name is too short");

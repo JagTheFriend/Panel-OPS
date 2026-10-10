@@ -57,17 +57,17 @@ export default function JoinPage() {
             Recruitment day · Room check-in
           </span>
           <h1 className="mt-5 text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl">
-            Check in with your roll number and get seated faster.
+            Check in with your roll number and join the queue.
           </h1>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70">
             Your roll number identifies you for the rest of the event. Pick the
-            domains you are reporting to and the live board will track your
-            station from waiting to done.
+            domains you are reporting to and the live board will track you from
+            waiting to done.
           </p>
           <ul className="mt-6 space-y-2.5 text-sm text-white/80">
             <li className="flex items-center gap-2.5">
               <span className="size-1.5 rounded-full bg-emerald-400" />
-              See free stations before you walk over
+              See the live queue before you walk over
             </li>
             <li className="flex items-center gap-2.5">
               <span className="size-1.5 rounded-full bg-indigo-400" />

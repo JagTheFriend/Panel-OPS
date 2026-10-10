@@ -5,10 +5,8 @@ import {
   addCandidate,
   cardIn,
   columnCount,
-  freeSeatCount,
   joinRoom,
   kanbanColumn,
-  occupiedStation,
   openPanelBoard,
   SEEDED_PANEL,
   uniqueRoll,
@@ -30,7 +28,6 @@ test.describe("panel board", () => {
     const baselineWaiting = await columnCount(page, "Waiting");
     const baselineInterview = await columnCount(page, "In interview");
     const baselineDone = await columnCount(page, "Done");
-    const baselineFree = await freeSeatCount(page);
 
     const rollNo = uniqueRoll();
     await addCandidate(page, rollNo, "Queue Tester");
@@ -44,8 +41,6 @@ test.describe("panel board", () => {
     await expect(cardIn(interviewing, rollNo)).toBeVisible();
     expect(await columnCount(page, "Waiting")).toBe(baselineWaiting);
     expect(await columnCount(page, "In interview")).toBe(baselineInterview + 1);
-    await expect(occupiedStation(page, rollNo)).toHaveCount(1);
-    expect(await freeSeatCount(page)).toBe(baselineFree - 1);
 
     await cardIn(interviewing, rollNo)
       .getByRole("button", { name: "Done" })
@@ -55,8 +50,6 @@ test.describe("panel board", () => {
     await expect(doneCard).toContainText("interview");
     expect(await columnCount(page, "In interview")).toBe(baselineInterview);
     expect(await columnCount(page, "Done")).toBe(baselineDone + 1);
-    await expect(occupiedStation(page, rollNo)).toHaveCount(0);
-    expect(await freeSeatCount(page)).toBe(baselineFree);
 
     await doneCard.getByRole("button", { name: "Reopen" }).click();
     await expect(cardIn(waiting, rollNo)).toBeVisible();

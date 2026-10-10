@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { listMembers } from "@/lib/data/queries";
 
 export const metadata = { title: "Members" };
+export const instant = false;
 
 const tiles = [
   { key: "total", label: "Total members" },

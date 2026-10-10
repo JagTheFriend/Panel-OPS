@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s · PanelOps",
   },
   description:
-    "Live kanban board for recruitment panels: track free stations, queues and interview progress by domain.",
+    "Live kanban board for recruitment panels: track queues and interview progress by domain.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

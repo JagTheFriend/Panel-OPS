@@ -9,6 +9,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getAdminPanels } from "@/lib/data/queries";
 
 export const metadata = { title: "Control room" };
+export const instant = false;
 
 const tiles = [
   { key: "total", label: "Total panels" },
@@ -29,7 +30,6 @@ export default async function AdminPanelsPage() {
     id: panel.id,
     name: panel.name,
     description: panel.description,
-    seatCount: panel.seatCount,
     isActive: panel.isActive,
     createdById: panel.createdById,
     createdByRollNo: panel.createdBy.rollNo,
@@ -56,8 +56,7 @@ export default async function AdminPanelsPage() {
       <div className="animate-fade-up">
         <h1 className="text-2xl font-semibold tracking-tight">Control room</h1>
         <p className="mt-1 text-sm text-ink-2">
-          Create panels, tune their station counts, and decide who staffs each
-          queue.
+          Create panels and decide who staffs each queue.
         </p>
       </div>
 

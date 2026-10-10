@@ -126,33 +126,6 @@ export function cardIn(column: KanbanColumn, rollNo: string): Locator {
     .locator("..");
 }
 
-export function seatGrid(page: Page): Locator {
-  return page.getByRole("img", { name: /stations free/ });
-}
-
-/** Seat chip holding an in-interview candidate. */
-export function occupiedStation(page: Page, rollNo: string): Locator {
-  return seatGrid(page).locator('span[title*="interviewing"]', {
-    hasText: rollNo,
-  });
-}
-
-/**
- * Reads the "N/M free" badge next to the station grid.
- *
- * Scoped to the seat card because client-side navigation briefly (and, in
- * this app, persistently until reload) leaves the previous route's DOM in the
- * document with `display: none`; text selectors match those hidden nodes too,
- * while role selectors do not.
- */
-export async function freeSeatCount(page: Page): Promise<number> {
-  const text = await seatGrid(page)
-    .locator("..")
-    .getByText(/^\d+\/\d+ free$/)
-    .innerText();
-  return Number(text.split("/")[0]);
-}
-
 /** Directory card for a panel name on /panels (h3 -> wrappers -> card). */
 export function directoryCard(page: Page, panelName: string): Locator {
   return page

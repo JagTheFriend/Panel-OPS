@@ -32,12 +32,11 @@ model User {
   addedCandidates  Candidate[]       @relation("CandidateAdder")
 }
 
-/// A domain station (panel). Admin-created.
+/// A domain panel. Admin-created.
 model Panel {
   id          String   @id @default(cuid())
   name        String   @unique
   description String?
-  seatCount   Int      @default(6)
   isActive    Boolean  @default(true)
   createdById String
   createdAt   DateTime @default(now())
@@ -69,8 +68,6 @@ model Candidate {
   rollNo      String
   name        String?
   status      CandidateStatus @default(WAITING)
-  /// Physical station/seat within the panel, assigned while IN_INTERVIEW.
-  seatNumber  Int?
   /// Ordering inside the current column (for kanban sorting).
   position    Int             @default(0)
   joinedAt    DateTime        @default(now())

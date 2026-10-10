@@ -3,7 +3,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { BoardEmptyCta, PanelCard } from "@/components/board/panel-card";
-import { LiveRefresh } from "@/components/live-refresh";
 import { Badge } from "@/components/ui/badge";
 import { Card, EmptyState } from "@/components/ui/empty-state";
 import { LiveDot } from "@/components/ui/spinner";
@@ -11,12 +10,13 @@ import { getCurrentUser } from "@/lib/auth";
 import { getBoardOverview } from "@/lib/data/queries";
 
 export const metadata = { title: "Board" };
+export const instant = false;
 
 const tiles = [
   { key: "panels", label: "Active panels" },
   { key: "waiting", label: "Waiting" },
   { key: "interviewing", label: "In interview" },
-  { key: "freeSeats", label: "Free stations" },
+  { key: "done", label: "Done" },
 ] as const;
 
 export default async function BoardPage() {
@@ -30,24 +30,22 @@ export default async function BoardPage() {
     panels: panels.length,
     waiting: panels.reduce((sum, p) => sum + p.waiting, 0),
     interviewing: panels.reduce((sum, p) => sum + p.interviewing, 0),
-    freeSeats: panels.reduce((sum, p) => sum + p.freeSeats, 0),
+    done: panels.reduce((sum, p) => sum + p.done, 0),
   };
 
   return (
     <div className="space-y-6">
-      <LiveRefresh intervalMs={4000} />
-
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Live board</h1>
           <p className="mt-1 text-sm text-ink-2">
-            Station occupancy and queues across every active domain panel.
+            Queues and interview progress across every active domain panel.
           </p>
         </div>
         <div className="flex items-center gap-2.5">
           <Badge tone="live" className="px-2.5 py-1">
             <LiveDot />
-            Auto-refreshing
+            Live
           </Badge>
           {user.role === "ADMIN" ? (
             <Link
@@ -97,8 +95,7 @@ export default async function BoardPage() {
 
       <p className="flex items-center gap-2 pt-2 text-xs text-ink-3">
         <RadioTower className="size-3.5" />
-        Updates stream in every few seconds — keep this tab open on the room
-        display.
+        Updates land as soon as somebody acts — no refresh needed.
       </p>
     </div>
   );

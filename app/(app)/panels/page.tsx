@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getDirectoryPanels } from "@/lib/data/queries";
 
 export const metadata = { title: "Panels" };
+export const instant = false;
 
 export default async function PanelsPage() {
   await connection();
@@ -19,7 +20,7 @@ export default async function PanelsPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Panels</h1>
         <p className="mt-1 text-sm text-ink-2">
           Join the domain panels you work at — each one runs its own interview
-          queue and stations.
+          queue.
         </p>
       </div>
 

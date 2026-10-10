@@ -27,11 +27,6 @@ export const createPanelSchema = z.object({
     .min(2, "Domain name is too short")
     .max(60, "Domain name is too long"),
   description: z.string().trim().max(300).optional(),
-  seatCount: z.coerce
-    .number()
-    .int("Must be a whole number")
-    .min(1, "At least 1 station")
-    .max(30, "At most 30 stations"),
 });
 
 export const updatePanelSchema = z.object({
@@ -42,11 +37,6 @@ export const updatePanelSchema = z.object({
     .min(2, "Domain name is too short")
     .max(60, "Domain name is too long"),
   description: z.string().trim().max(300).optional(),
-  seatCount: z.coerce
-    .number()
-    .int("Must be a whole number")
-    .min(1, "At least 1 station")
-    .max(30, "At most 30 stations"),
   isActive: z.boolean(),
 });
 

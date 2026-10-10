@@ -71,7 +71,7 @@ const COLUMNS = [
     badgeTone: "live",
     empty: {
       title: "No interview running",
-      description: "Press Start on a waiting candidate to claim a station.",
+      description: "Press Start on a waiting candidate to move them live.",
     },
   },
   {
@@ -95,9 +95,11 @@ function isStatus(value: string): value is CandidateStatus {
 export function KanbanBoard({
   panelId,
   candidates,
+  canRemove = true,
 }: {
   panelId: string;
   candidates: BoardCandidate[];
+  canRemove?: boolean;
 }) {
   const router = useRouter();
   const { push } = useToast();
@@ -261,7 +263,7 @@ export function KanbanBoard({
 
   const cardProps: CardHandlers = {
     onStatusChange: changeStatus,
-    onRemove: removeOne,
+    onRemove: canRemove ? removeOne : undefined,
     onRename: renameOne,
   };
 

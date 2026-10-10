@@ -4,9 +4,9 @@ import Link from "next/link";
 const features = [
   {
     icon: Gauge,
-    title: "Live station board",
+    title: "Live queue board",
     description:
-      "See exactly which stations are occupied and free across every domain panel, updating in real time.",
+      "See waiting, live and done counts across every domain panel at a glance.",
   },
   {
     icon: Layers3,
@@ -62,12 +62,11 @@ export default function HomePage() {
             Live recruitment operations
           </span>
           <h1 className="mt-5 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            Every panel. Every station. One live board.
+            Every panel. One live board.
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-2 sm:text-lg">
-            PanelOps keeps track of empty stations across your recruitment
-            domain panels — so nobody waits at a busy desk while another sits
-            empty.
+            PanelOps tracks every domain panel's queue — waiting, live and done
+            — so the whole room stays in sync.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Link
