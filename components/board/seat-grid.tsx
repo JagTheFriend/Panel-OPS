@@ -17,7 +17,7 @@ export function SeatGrid({
   );
 
   return (
-    <Card className="p-5">
+    <Card className="self-start p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-live-soft text-live-ink">

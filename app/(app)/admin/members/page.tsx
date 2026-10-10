@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { type MemberRow, MembersTable } from "@/components/admin/members-table";
 import { Card } from "@/components/ui/empty-state";
 import { getCurrentUser } from "@/lib/auth";
@@ -13,6 +14,7 @@ const tiles = [
 ] as const;
 
 export default async function AdminMembersPage() {
+  await connection();
   const user = await getCurrentUser();
   if (!user) redirect("/join");
   if (user.role !== "ADMIN") redirect("/board");

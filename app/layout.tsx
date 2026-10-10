@@ -32,8 +32,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
-        <Analytics mode="auto" />
-        <SpeedInsights />
+        {process.env.VERCEL ? (
+          <>
+            <Analytics mode="auto" />
+            <SpeedInsights />
+          </>
+        ) : null}
       </body>
     </html>
   );

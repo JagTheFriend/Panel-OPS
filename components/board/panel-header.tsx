@@ -2,7 +2,7 @@ import { ArrowLeft, Radio, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { LeavePanelButton } from "@/components/board/leave-panel-button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, initials } from "@/lib/utils";
 
 type PanelSummary = {
   id: string;
@@ -106,7 +106,7 @@ export function PanelHeader({
                         : "bg-surface-2 text-ink-2",
                     )}
                   >
-                    {member.rollNo.slice(0, 2).toUpperCase()}
+                    {initials(member.name, member.rollNo)}
                   </span>
                 ))}
                 {extraMembers > 0 ? (

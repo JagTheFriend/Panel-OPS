@@ -15,9 +15,13 @@ import posthog from "posthog-js";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/actions/auth";
-import { cn } from "@/lib/utils";
+import { cn, initials } from "@/lib/utils";
 
-type HeaderUser = { rollNo: string; role: "ADMIN" | "USER" };
+type HeaderUser = {
+  rollNo: string;
+  name: string | null;
+  role: "ADMIN" | "USER";
+};
 
 const links = [
   { href: "/board", label: "Board", icon: LayoutDashboard },
@@ -88,7 +92,7 @@ export function Header({ user }: { user: HeaderUser }) {
         <div className="flex items-center gap-2.5">
           <span className="hidden items-center gap-2 rounded-full border border-line bg-surface-2 py-1 pr-3 pl-1 sm:inline-flex">
             <span className="flex size-7 items-center justify-center rounded-full bg-brand-soft font-mono text-[11px] font-semibold text-brand-ink">
-              {user.rollNo.slice(0, 2).toUpperCase()}
+              {initials(user.name, user.rollNo)}
             </span>
             <span className="font-mono text-xs font-medium text-ink">
               {user.rollNo}

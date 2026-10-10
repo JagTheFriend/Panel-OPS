@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { connection } from "next/server";
 import { AddCandidateForm } from "@/components/board/add-candidate-form";
 import { JoinPanelCta } from "@/components/board/join-panel-cta";
 import { KanbanBoard } from "@/components/board/kanban-board";
@@ -16,6 +17,7 @@ export default async function PanelBoardPage({
   params: Promise<{ panelId: string }>;
 }) {
   const { panelId } = await params;
+  await connection();
   const [panel, user] = await Promise.all([
     getPanelBoard(panelId),
     getCurrentUser(),

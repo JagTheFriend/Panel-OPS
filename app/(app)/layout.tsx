@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { type ReactNode, Suspense } from "react";
 import { IdentityBridge } from "@/components/identity-bridge";
 import { Header } from "@/components/shell/header";
@@ -10,13 +11,17 @@ import { getCurrentUser } from "@/lib/auth";
  * depth — e.g. when a session cookie outlives a deleted account.
  */
 async function ProtectedShell({ children }: { children: ReactNode }) {
+  await connection();
+
   const user = await getCurrentUser();
   if (!user) redirect("/join");
 
   return (
     <>
       <IdentityBridge rollNo={user.rollNo} name={user.name} role={user.role} />
-      <Header user={{ rollNo: user.rollNo, role: user.role }} />
+      <Header
+        user={{ rollNo: user.rollNo, name: user.name, role: user.role }}
+      />
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-7 sm:px-6 lg:px-8">
         {children}
       </main>

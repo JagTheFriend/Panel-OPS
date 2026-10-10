@@ -82,12 +82,11 @@ test.describe("panel board", () => {
 
     const waiting = kanbanColumn(page, "Waiting");
     const done = kanbanColumn(page, "Done");
+    await expect(cardIn(waiting, rollNo)).toBeVisible();
     const baselineWaiting = await columnCount(page, "Waiting");
     const baselineDone = await columnCount(page, "Done");
 
     const source = cardIn(waiting, rollNo);
-    await expect(source).toBeVisible();
-
     await source.dragTo(done.body, {
       sourcePosition: { x: 24, y: 14 },
       targetPosition: { x: 60, y: 60 },
@@ -96,7 +95,7 @@ test.describe("panel board", () => {
 
     const dragged = cardIn(done, rollNo);
     await expect(dragged).toBeVisible();
-    expect(await columnCount(page, "Waiting")).toBe(baselineWaiting);
+    expect(await columnCount(page, "Waiting")).toBe(baselineWaiting - 1);
     expect(await columnCount(page, "Done")).toBe(baselineDone + 1);
 
     await dragged.getByRole("button", { name: `Remove ${rollNo}` }).click();

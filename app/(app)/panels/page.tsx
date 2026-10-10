@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { PanelsDirectory } from "@/components/panels/panels-directory";
 import { getCurrentUser } from "@/lib/auth";
 import { getDirectoryPanels } from "@/lib/data/queries";
@@ -6,6 +7,7 @@ import { getDirectoryPanels } from "@/lib/data/queries";
 export const metadata = { title: "Panels" };
 
 export default async function PanelsPage() {
+  await connection();
   const user = await getCurrentUser();
   if (!user) redirect("/join");
 

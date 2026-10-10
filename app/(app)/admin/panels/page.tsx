@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import {
   type ControlPanel,
   PanelsControl,
@@ -17,6 +18,7 @@ const tiles = [
 ] as const;
 
 export default async function AdminPanelsPage() {
+  await connection();
   const user = await getCurrentUser();
   if (!user) redirect("/join");
   if (user.role !== "ADMIN") redirect("/board");

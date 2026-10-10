@@ -1,6 +1,7 @@
 import { Columns3, Plus, RadioTower } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { BoardEmptyCta, PanelCard } from "@/components/board/panel-card";
 import { LiveRefresh } from "@/components/live-refresh";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ const tiles = [
 ] as const;
 
 export default async function BoardPage() {
+  await connection();
   const user = await getCurrentUser();
   if (!user) redirect("/join");
 
