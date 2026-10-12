@@ -1,9 +1,15 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 
-export async function getBoardOverview(currentUserId: string) {
+export async function getBoardOverview(
+  currentUserId: string,
+  isAdmin: boolean,
+) {
   const panels = await prisma.panel.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      ...(isAdmin ? {} : { members: { some: { userId: currentUserId } } }),
+    },
     orderBy: { name: "asc" },
     include: {
       candidates: { select: { status: true } },
@@ -57,9 +63,15 @@ export async function getPanelBoard(panelId: string) {
   };
 }
 
-export async function getDirectoryPanels(currentUserId: string) {
+export async function getDirectoryPanels(
+  currentUserId: string,
+  isAdmin: boolean,
+) {
   const panels = await prisma.panel.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      ...(isAdmin ? {} : { members: { some: { userId: currentUserId } } }),
+    },
     orderBy: { name: "asc" },
     include: {
       members: { select: { userId: true } },

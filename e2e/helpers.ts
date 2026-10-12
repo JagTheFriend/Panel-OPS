@@ -6,7 +6,7 @@ export const ROOM_PIN = "1234";
 
 /** Seeded panel that always has candidates in every column. */
 export const SEEDED_PANEL = "Web Development";
-/** Seeded panel used for join/leave round trips (baseline membership: nobody). */
+/** Seeded panel used for admin join/leave round trips (seed joins the admin). */
 export const DIRECTORY_PANEL = "DevOps & Cloud";
 
 let sequence = 0;

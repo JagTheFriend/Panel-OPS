@@ -12,15 +12,16 @@ export default async function PanelsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/join");
 
-  const panels = await getDirectoryPanels(user.id);
+  const panels = await getDirectoryPanels(user.id, user.role === "ADMIN");
 
   return (
     <div className="space-y-6">
       <div className="animate-fade-up">
         <h1 className="text-2xl font-semibold tracking-tight">Panels</h1>
         <p className="mt-1 text-sm text-ink-2">
-          Join the domain panels you work at — each one runs its own interview
-          queue.
+          {user.role === "ADMIN"
+            ? "Every domain panel — join the ones you work at."
+            : "The domains you picked at check-in — each one runs its own interview queue."}
         </p>
       </div>
 

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { returnValidationErrors } from "next-safe-action";
 import { trackDomainEvent } from "@/lib/analytics/posthog-server";
 import type { Role } from "@/lib/auth";
+import { readDomainConfig } from "@/lib/config";
 import { prisma } from "@/lib/db";
 import { actionClient } from "@/lib/safe-action";
 import { joinRoomSchema } from "@/lib/schemas";
@@ -15,7 +16,7 @@ export const joinRoom = actionClient
     const { rollNo, pin, name, panelIds } = parsedInput;
 
     const adminPin = process.env.ADMIN_PIN;
-    const roomPin = process.env.ROOM_PIN;
+    const roomPin = readDomainConfig().ROOM_PIN ?? process.env.ROOM_PIN;
     const isAdminPin = Boolean(adminPin) && pin === adminPin;
     const isRoomPin = Boolean(roomPin) && pin === roomPin;
 

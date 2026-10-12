@@ -28,7 +28,7 @@ export function PanelsDirectory({ panels }: { panels: DirectoryPanel[] }) {
       <EmptyState
         icon={<PanelsTopLeft className="size-5" />}
         title="No panels yet"
-        description="Admins create domain panels from the control room — new ones appear here the moment they exist."
+        description="Admins add domains from the control room — members pick them when they check in."
       />
     );
   }

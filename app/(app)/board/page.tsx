@@ -24,7 +24,7 @@ export default async function BoardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/join");
 
-  const panels = await getBoardOverview(user.id);
+  const panels = await getBoardOverview(user.id, user.role === "ADMIN");
 
   const totals = {
     panels: panels.length,
@@ -39,7 +39,7 @@ export default async function BoardPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Live board</h1>
           <p className="mt-1 text-sm text-ink-2">
-            Queues and interview progress across every active domain panel.
+            Queues and interview progress across your domain panels.
           </p>
         </div>
         <div className="flex items-center gap-2.5">

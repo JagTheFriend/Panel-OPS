@@ -14,11 +14,12 @@ next-safe-action, PostHog and Vercel Analytics.
   `ADMIN` role. Sessions are httpOnly iron-session cookies, optimistically gated in
   `proxy.ts` so protected routes redirect with a real `307` before any rendering.
 - **Live board overview** (`/board`) — every panel you belong to, with queue depth
-  and live waiting/in-interview/done counts.
+  and live waiting/in-interview/done counts. Members only see the domains they
+  picked at check-in; admins see every panel.
 - **Kanban per panel** (`/board/[panelId]`) — Waiting → In interview → Done columns with
   drag & drop (dnd-kit) *and* explicit Start/Done/Reopen buttons, elapsed interview
   timers, and completion durations.
-- **Panels directory** (`/panels`) — searchable list of active domains; join/leave and
+- **Panels directory** (`/panels`) — searchable list of domains; join/leave and
   jump straight into the board.
 - **Control room** (`/admin/panels`, admin only) — create/edit/archive/delete panels,
   manage members per panel, and remove members from panels.
@@ -57,9 +58,11 @@ npm install                     # runs prisma generate via postinstall
 cp .env.example .env            # then set SESSION_SECRET:
 openssl rand -hex 32            #   paste output as SESSION_SECRET
 
+# edit domain.json — set ROOM_PIN and the DOMAINS list (add/remove freely)
+
 npm run db:up                   # docker compose: dev DB :5433, test DB :5434
 npm run db:migrate              # apply migrations
-npm run db:seed                 # demo panels, users and queue data
+npm run db:seed                 # creates panels from domain.json + demo users/queue
 
 npm run dev                     # http://localhost:3100
 ```
@@ -72,6 +75,16 @@ Seeded logins (local only):
 | any numeric roll | `1234` | USER (new rolls are created on first join; name + at least one domain are required) |
 
 `9002` exists as a regular user for role-flip testing.
+
+## domain.json
+
+Room configuration lives in [`domain.json`](domain.json) at the repo root — edit it
+and re-run `npm run db:seed` to apply:
+
+- `ROOM_PIN` — the shared participant PIN (takes precedence over the `ROOM_PIN` env var)
+- `DOMAINS` — the list of domain panels; each entry is `{ "name", "description" }`.
+  Add an entry to create a panel on the next seed; remove one and the panel is
+  deactivated (queue history is kept, re-add the name to reactivate).
 
 ## Scripts
 
@@ -143,7 +156,7 @@ See [`.env.example`](.env.example):
 | --- | ------- |
 | `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | pooled (app) + direct (migrations) Neon/local strings |
 | `SESSION_SECRET` | iron-session seal key, ≥ 32 chars (`openssl rand -hex 32`) |
-| `ROOM_PIN` / `ADMIN_PIN` | shared participant PIN / admin upgrade PIN |
+| `ROOM_PIN` / `ADMIN_PIN` | fallback participant PIN (domain.json wins) / admin upgrade PIN |
 | `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` / `_KEY` / `_HOST` / `_UI_HOST` | PostHog project key (either name works) + API/UI hosts (empty = no-op) |
 
 ## Deploying (Vercel + Neon)

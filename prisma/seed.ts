@@ -1,5 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
+import { readDomainConfig } from "../lib/config";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -17,30 +18,20 @@ async function main() {
     create: { rollNo: "9002", name: "Room Coordinator", role: "USER" },
   });
 
-  const panelsData = [
-    {
-      name: "Web Development",
-      description: "Frontend, backend & full-stack roles",
-    },
-    {
-      name: "Data Science",
-      description: "ML, analytics and data engineering",
-    },
-    {
-      name: "UI/UX Design",
-      description: "Product design & research",
-    },
-    {
-      name: "DevOps & Cloud",
-      description: "Infrastructure, CI/CD and SRE",
-    },
-  ] as const;
+  const domains = readDomainConfig().DOMAINS ?? [];
+  if (domains.length === 0) {
+    throw new Error("domain.json has no DOMAINS entries");
+  }
 
-  for (const data of panelsData) {
+  for (const data of domains) {
     const panel = await prisma.panel.upsert({
       where: { name: data.name },
-      update: { description: data.description },
-      create: { ...data, createdById: admin.id },
+      update: { description: data.description ?? null, isActive: true },
+      create: {
+        name: data.name,
+        description: data.description ?? null,
+        createdById: admin.id,
+      },
     });
 
     await prisma.panelMembership.upsert({
@@ -50,12 +41,20 @@ async function main() {
     });
   }
 
-  const webPanel = await prisma.panel.findUniqueOrThrow({
+  await prisma.panel.updateMany({
+    where: {
+      name: { notIn: domains.map((data) => data.name) },
+      isActive: true,
+    },
+    data: { isActive: false },
+  });
+
+  const webPanel = await prisma.panel.findUnique({
     where: { name: "Web Development" },
     include: { candidates: true },
   });
 
-  if (webPanel.candidates.length === 0) {
+  if (webPanel && webPanel.candidates.length === 0) {
     const samples = [
       {
         rollNo: "1011",
@@ -90,7 +89,7 @@ async function main() {
   console.log("Seed complete:", {
     admin: admin.rollNo,
     coordinator: coordinator.rollNo,
-    panels: panelsData.length,
+    panels: domains.length,
   });
 }
 
