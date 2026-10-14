@@ -105,7 +105,7 @@ export default function HomePage() {
               <ArrowRight className="size-4" />
             </Link>
             <span className="text-sm text-ink-3">
-              Roll number + room PIN — no signup required.
+              Google sign-in · rooms join with a PIN.
             </span>
           </div>
         </div>

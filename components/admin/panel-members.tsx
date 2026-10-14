@@ -26,7 +26,7 @@ export function PanelMembers({ panel }: { panel: ControlPanel }) {
       push({
         title: "Member removed",
         description: member
-          ? `${member.rollNo} no longer staffs ${panel.name}.`
+          ? `${member.name ?? member.email} no longer staffs ${panel.name}.`
           : undefined,
         tone: "success",
       });
@@ -65,16 +65,13 @@ export function PanelMembers({ panel }: { panel: ControlPanel }) {
               key={member.userId}
               className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-line bg-surface px-3.5 py-2.5"
             >
-              <span className="font-mono text-[13px] font-semibold text-ink">
-                {member.rollNo}
+              <span className="max-w-[12rem] truncate font-mono text-[13px] font-semibold text-ink">
+                {member.email}
               </span>
               <span className="min-w-0 flex-1 truncate text-sm text-ink-2">
                 {member.name ?? "—"}
               </span>
               {member.isCreator ? <Badge tone="brand">Creator</Badge> : null}
-              <Badge tone={member.role === "ADMIN" ? "brand" : "neutral"}>
-                {member.role}
-              </Badge>
               <span className="text-xs text-ink-3">
                 Joined <RelativeTime at={new Date(member.joinedAt)} />
               </span>
@@ -83,7 +80,7 @@ export function PanelMembers({ panel }: { panel: ControlPanel }) {
                 size="sm"
                 className="text-danger-ink hover:bg-danger-soft"
                 onClick={() => setTarget(member)}
-                aria-label={`Remove ${member.rollNo} from ${panel.name}`}
+                aria-label={`Remove ${member.name ?? member.email} from ${panel.name}`}
               >
                 <UserMinus className="size-3.5" />
                 Remove
@@ -101,10 +98,12 @@ export function PanelMembers({ panel }: { panel: ControlPanel }) {
             remove.execute({ panelId: panel.id, userId: target.userId });
           }
         }}
-        title={target ? `Remove ${target.rollNo}?` : "Remove member"}
+        title={
+          target ? `Remove ${target.name ?? target.email}?` : "Remove member"
+        }
         description={
           target
-            ? `${target.name ?? target.rollNo} will lose access to ${panel.name}. They can rejoin from the directory at any time.`
+            ? `${target.name ?? target.email} will lose access to ${panel.name}. They can rejoin from the directory at any time.`
             : undefined
         }
         confirmLabel="Remove member"

@@ -2,6 +2,7 @@
 
 import {
   Columns3,
+  DoorOpen,
   LayoutDashboard,
   LogOut,
   Radio,
@@ -9,47 +10,79 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useAction } from "next-safe-action/hooks";
+import { usePathname, useRouter } from "next/navigation";
 import posthog from "posthog-js";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { logout } from "@/lib/actions/auth";
+import { authClient } from "@/lib/auth-client";
 import { cn, initials } from "@/lib/utils";
 
 type HeaderUser = {
-  rollNo: string;
   name: string | null;
-  role: "ADMIN" | "USER";
+  email: string;
 };
 
-const links = [
-  { href: "/board", label: "Board", icon: LayoutDashboard },
-  { href: "/panels", label: "Panels", icon: Columns3 },
-  { href: "/admin/panels", label: "Control", icon: Settings2, adminOnly: true },
-  { href: "/admin/members", label: "Members", icon: Users, adminOnly: true },
-] as const;
+type HeaderRoom = {
+  id: string;
+  name: string;
+  role: "ADMIN" | "USER";
+} | null;
 
 function isActive(pathname: string, href: string) {
-  if (href === "/board")
-    return pathname === "/board" || pathname.startsWith("/board/");
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function Header({ user }: { user: HeaderUser }) {
+export function Header({ user, room }: { user: HeaderUser; room: HeaderRoom }) {
   const pathname = usePathname();
-  const { execute, isExecuting } = useAction(logout, {
-    onSuccess: () => posthog.reset(),
-  });
+  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
 
-  const visibleLinks = links.filter(
-    (link) => !("adminOnly" in link) || user.role === "ADMIN",
-  );
+  const links = room
+    ? [
+        {
+          href: `/rooms/${room.id}/board`,
+          label: "Board",
+          icon: LayoutDashboard,
+        },
+        {
+          href: `/rooms/${room.id}/panels`,
+          label: "Panels",
+          icon: Columns3,
+        },
+        ...(room.role === "ADMIN"
+          ? [
+              {
+                href: `/rooms/${room.id}/admin/panels`,
+                label: "Control",
+                icon: Settings2,
+              },
+              {
+                href: `/rooms/${room.id}/admin/members`,
+                label: "Members",
+                icon: Users,
+              },
+            ]
+          : []),
+      ]
+    : [{ href: "/rooms", label: "Rooms", icon: DoorOpen }];
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await authClient.signOut();
+      posthog.reset();
+      router.push("/join");
+      router.refresh();
+    } catch {
+      setSigningOut(false);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:gap-5 lg:px-8">
-        <Link href="/board" className="group flex items-center gap-2.5">
+        <Link href="/rooms" className="group flex items-center gap-2.5">
           <span className="flex size-8 items-center justify-center rounded-lg bg-brand text-sm font-bold text-white shadow-card transition-transform group-hover:scale-105">
             P
           </span>
@@ -57,16 +90,19 @@ export function Header({ user }: { user: HeaderUser }) {
             <span className="text-sm font-semibold tracking-tight text-ink">
               PanelOps
             </span>
-            <span className="hidden text-[10px] font-medium tracking-wider text-ink-3 uppercase sm:block">
-              Recruitment desk
+            <span
+              className="hidden max-w-[10rem] truncate text-[10px] font-medium tracking-wider text-ink-3 uppercase sm:block"
+              title={room?.name}
+            >
+              {room?.name ?? "Recruitment desk"}
             </span>
           </span>
         </Link>
 
         <nav className="min-w-0 flex-1 overflow-x-auto">
           <ul className="flex items-center gap-1">
-            {visibleLinks.map((link) => {
-              const Icon = "icon" in link ? link.icon : LayoutDashboard;
+            {links.map((link) => {
+              const Icon = link.icon;
               const active = isActive(pathname, link.href);
               return (
                 <li key={link.href}>
@@ -92,26 +128,25 @@ export function Header({ user }: { user: HeaderUser }) {
         <div className="flex items-center gap-2.5">
           <span className="hidden items-center gap-2 rounded-full border border-line bg-surface-2 py-1 pr-3 pl-1 sm:inline-flex">
             <span className="flex size-7 items-center justify-center rounded-full bg-brand-soft font-mono text-[11px] font-semibold text-brand-ink">
-              {initials(user.name, user.rollNo)}
+              {initials(user.name, user.email)}
             </span>
-            <span className="font-mono text-xs font-medium text-ink">
-              {user.rollNo}
+            <span className="max-w-[9rem] truncate font-mono text-xs font-medium text-ink">
+              {user.email.split("@")[0]}
             </span>
-            <Badge tone={user.role === "ADMIN" ? "brand" : "neutral"}>
-              {user.role === "ADMIN" ? <Radio className="size-3" /> : null}
-              {user.role}
-            </Badge>
+            {room ? (
+              <Badge tone={room.role === "ADMIN" ? "brand" : "neutral"}>
+                {room.role === "ADMIN" ? <Radio className="size-3" /> : null}
+                {room.role}
+              </Badge>
+            ) : null}
           </span>
 
           <Button
             variant="ghost"
             size="sm"
             aria-label="Sign out"
-            loading={isExecuting}
-            onClick={() => {
-              posthog.reset();
-              execute();
-            }}
+            loading={signingOut}
+            onClick={handleSignOut}
           >
             <LogOut className="size-4" />
             <span className="hidden md:inline">Sign out</span>

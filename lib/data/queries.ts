@@ -1,11 +1,40 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 
+export async function getRoomsForUser(userId: string) {
+  const memberships = await prisma.roomMembership.findMany({
+    where: { userId },
+    orderBy: { joinedAt: "asc" },
+    select: {
+      role: true,
+      joinedAt: true,
+      room: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          _count: { select: { panels: { where: { isActive: true } } } },
+        },
+      },
+    },
+  });
+
+  return memberships.map((membership) => ({
+    id: membership.room.id,
+    name: membership.room.name,
+    code: membership.room.code,
+    role: membership.role,
+    panelCount: membership.room._count.panels,
+  }));
+}
+
 export async function getBoardOverview(
+  roomId: string,
   currentUserId: string,
   isAdmin: boolean,
 ) {
   const where = {
+    roomId,
     isActive: true,
     ...(isAdmin ? {} : { members: { some: { userId: currentUserId } } }),
   };
@@ -19,10 +48,10 @@ export async function getBoardOverview(
     prisma.candidate.groupBy({
       by: ["panelId", "status"],
       _count: { _all: true },
-      where: { panel: { isActive: true } },
+      where: { panel: { roomId, isActive: true } },
     }),
     prisma.panelMembership.findMany({
-      where: { userId: currentUserId },
+      where: { userId: currentUserId, panel: { roomId } },
       select: { panelId: true },
     }),
   ]);
@@ -57,7 +86,7 @@ export async function getPanelName(panelId: string) {
   return panel?.name ?? null;
 }
 
-export async function getPanelBoard(panelId: string) {
+export async function getPanelBoard(panelId: string, currentUserId: string) {
   const panel = await prisma.panel.findUnique({
     where: { id: panelId },
     include: {
@@ -76,7 +105,7 @@ export async function getPanelBoard(panelId: string) {
       members: {
         orderBy: { joinedAt: "asc" },
         include: {
-          user: { select: { id: true, rollNo: true, name: true, role: true } },
+          user: { select: { id: true, name: true, email: true, image: true } },
         },
       },
     },
@@ -86,10 +115,12 @@ export async function getPanelBoard(panelId: string) {
 
   return {
     id: panel.id,
+    roomId: panel.roomId,
     name: panel.name,
     description: panel.description,
     isActive: panel.isActive,
     createdById: panel.createdById,
+    joined: panel.members.some((m) => m.user.id === currentUserId),
     candidates: panel.candidates,
     members: panel.members.map((m) => m.user),
     stats: {
@@ -102,14 +133,11 @@ export async function getPanelBoard(panelId: string) {
 }
 
 export async function getDirectoryPanels(
+  roomId: string,
   currentUserId: string,
-  isAdmin: boolean,
 ) {
   const panels = await prisma.panel.findMany({
-    where: {
-      isActive: true,
-      ...(isAdmin ? {} : { members: { some: { userId: currentUserId } } }),
-    },
+    where: { roomId, isActive: true },
     orderBy: { name: "asc" },
     select: {
       id: true,
@@ -129,14 +157,17 @@ export async function getDirectoryPanels(
   }));
 }
 
-export async function getAdminPanels() {
+export async function getAdminPanels(roomId: string) {
   return prisma.panel.findMany({
+    where: { roomId },
     orderBy: { name: "asc" },
     include: {
-      createdBy: { select: { rollNo: true } },
+      createdBy: { select: { name: true } },
       members: {
         include: {
-          user: { select: { id: true, rollNo: true, name: true, role: true } },
+          user: {
+            select: { id: true, name: true, email: true, image: true },
+          },
         },
       },
       _count: { select: { candidates: true } },
@@ -144,17 +175,32 @@ export async function getAdminPanels() {
   });
 }
 
-export async function listMembers() {
-  return prisma.user.findMany({
-    orderBy: [{ role: "asc" }, { rollNo: "asc" }],
-    include: {
-      _count: {
+export async function listRoomMembers(roomId: string) {
+  const memberships = await prisma.roomMembership.findMany({
+    where: { roomId },
+    orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
+    select: {
+      role: true,
+      joinedAt: true,
+      user: {
         select: {
-          panels: true,
-          addedCandidates: true,
-          createdPanels: true,
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          _count: { select: { panelMemberships: true } },
         },
       },
     },
   });
+
+  return memberships.map((membership) => ({
+    id: membership.user.id,
+    name: membership.user.name,
+    email: membership.user.email,
+    image: membership.user.image,
+    role: membership.role,
+    joinedAt: membership.joinedAt,
+    panelCount: membership.user._count.panelMemberships,
+  }));
 }

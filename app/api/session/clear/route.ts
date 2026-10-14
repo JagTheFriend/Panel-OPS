@@ -1,27 +1,20 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { destroySession, getSession } from "@/lib/session";
+
+const SESSION_COOKIES = [
+  "better-auth.session_token",
+  "__Secure-better-auth.session_token",
+];
 
 /**
- * Clears a session cookie that no longer resolves to an account and bounces
- * to /join. Without this, a deleted account with a live cookie loops forever:
- * the layout redirects to /join, the proxy sees a valid cookie and sends the
- * browser back to /board.
+ * Clears a better-auth session cookie that no longer resolves to an account
+ * and bounces to /join. Without this, a stale cookie loops forever: the layout
+ * redirects here, the proxy sees a cookie and sends the browser back into the
+ * app.
  */
 export async function GET(request: Request) {
-  const session = await getSession();
-  const user = session.userId
-    ? await prisma.user.findUnique({
-        where: { id: session.userId },
-        select: { id: true },
-      })
-    : null;
-
-  // Account still exists (transient failure) — keep the session.
-  if (user) {
-    return NextResponse.redirect(new URL("/board", request.url));
+  const response = NextResponse.redirect(new URL("/join", request.url));
+  for (const name of SESSION_COOKIES) {
+    response.cookies.set(name, "", { expires: new Date(0), path: "/" });
   }
-
-  await destroySession();
-  return NextResponse.redirect(new URL("/join", request.url));
+  return response;
 }

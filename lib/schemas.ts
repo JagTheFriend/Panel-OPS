@@ -1,5 +1,40 @@
 import { z } from "zod";
 
+export const pinSchema = z
+  .string()
+  .trim()
+  .min(4, "PIN must be 4–12 characters")
+  .max(12, "PIN must be 4–12 characters");
+
+export const roomCodeSchema = z
+  .string()
+  .trim()
+  .min(4, "Room code is too short")
+  .max(12, "Room code is too long")
+  .regex(/^[a-zA-Z0-9]+$/, "Room code is alphanumeric");
+
+export const createRoomSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(2, "Room name is too short")
+      .max(60, "Room name is too long"),
+    adminPin: pinSchema,
+    normalPin: pinSchema,
+  })
+  .refine((values) => values.adminPin !== values.normalPin, {
+    message: "Admin and normal PIN must differ",
+    path: ["normalPin"],
+  });
+
+export const joinRoomSchema = z.object({
+  code: roomCodeSchema,
+  pin: pinSchema,
+});
+
+export const roomIdSchema = z.object({ roomId: z.string().min(1) });
+
 export const rollNoSchema = z
   .string()
   .trim()
@@ -7,23 +42,8 @@ export const rollNoSchema = z
   .min(3, "Roll number is too short")
   .max(20, "Roll number is too long");
 
-export const pinSchema = z
-  .string()
-  .trim()
-  .min(4, "PIN must be 4–12 characters")
-  .max(12, "PIN must be 4–12 characters");
-
-export const joinRoomSchema = z.object({
-  rollNo: rollNoSchema,
-  pin: pinSchema,
-  name: z.string().trim().min(1, "Name is required").max(60),
-  panelIds: z
-    .array(z.string())
-    .max(25)
-    .refine((ids) => new Set(ids).size === ids.length, "Duplicate domains"),
-});
-
 export const createPanelSchema = z.object({
+  roomId: z.string().min(1),
   name: z
     .string()
     .trim()
@@ -33,6 +53,7 @@ export const createPanelSchema = z.object({
 });
 
 export const updatePanelSchema = z.object({
+  roomId: z.string().min(1),
   id: z.string().min(1),
   name: z
     .string()
@@ -43,9 +64,12 @@ export const updatePanelSchema = z.object({
   isActive: z.boolean(),
 });
 
-export const panelIdSchema = z.object({ panelId: z.string().min(1) });
+export const panelRefSchema = z.object({
+  roomId: z.string().min(1),
+  panelId: z.string().min(1),
+});
 
-export const removeMemberSchema = z.object({
+export const removePanelMemberSchema = z.object({
   panelId: z.string().min(1),
   userId: z.string().min(1),
 });
@@ -80,11 +104,13 @@ export const removeCandidateSchema = z.object({
   id: z.string().min(1),
 });
 
-export const setUserRoleSchema = z.object({
+export const setRoomMemberRoleSchema = z.object({
+  roomId: z.string().min(1),
   userId: z.string().min(1),
   role: z.enum(["ADMIN", "USER"]),
 });
 
-export const deleteUserSchema = z.object({
+export const removeRoomMemberSchema = z.object({
+  roomId: z.string().min(1),
   userId: z.string().min(1),
 });

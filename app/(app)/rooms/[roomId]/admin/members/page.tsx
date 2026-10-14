@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { type MemberRow, MembersTable } from "@/components/admin/members-table";
 import { Card } from "@/components/ui/empty-state";
-import { getCurrentUser } from "@/lib/auth";
-import { listMembers } from "@/lib/data/queries";
+import { getCurrentUser, getRoomContext } from "@/lib/auth";
+import { listRoomMembers } from "@/lib/data/queries";
 
 export const metadata = { title: "Members" };
 export const instant = false;
@@ -14,23 +14,30 @@ const tiles = [
   { key: "users", label: "Users" },
 ] as const;
 
-export default async function AdminMembersPage() {
+export default async function AdminMembersPage({
+  params,
+}: {
+  params: Promise<{ roomId: string }>;
+}) {
+  const { roomId } = await params;
   await connection();
+
   const user = await getCurrentUser();
   if (!user) redirect("/api/session/clear");
-  if (user.role !== "ADMIN") redirect("/board");
 
-  const members = await listMembers();
+  const roomCtx = await getRoomContext(roomId, user.id);
+  if (!roomCtx) redirect("/rooms");
+  if (roomCtx.role !== "ADMIN") redirect(`/rooms/${roomId}/board`);
+
+  const members = await listRoomMembers(roomId);
 
   const rows: MemberRow[] = members.map((member) => ({
     id: member.id,
-    rollNo: member.rollNo,
     name: member.name,
+    email: member.email,
     role: member.role,
-    createdAt: member.createdAt.toISOString(),
-    panelCount: member._count.panels,
-    addedCandidateCount: member._count.addedCandidates,
-    createdPanelCount: member._count.createdPanels,
+    joinedAt: member.joinedAt.toISOString(),
+    panelCount: member.panelCount,
   }));
 
   const totals = {
@@ -67,7 +74,7 @@ export default async function AdminMembersPage() {
         ))}
       </div>
 
-      <MembersTable members={rows} currentUserId={user.id} />
+      <MembersTable members={rows} roomId={roomId} currentUserId={user.id} />
     </div>
   );
 }

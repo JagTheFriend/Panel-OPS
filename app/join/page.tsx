@@ -1,21 +1,17 @@
 import { Radio } from "lucide-react";
 import type { Metadata } from "next";
-import { connection } from "next/server";
-import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/spinner";
-import { prisma } from "@/lib/db";
 import { SITE_NAME } from "@/lib/site";
-import { JoinForm } from "./join-form";
+import { GoogleSignIn } from "./google-button";
 
 const joinDescription =
-  "Check in with your roll number and room PIN — no signup required. Pick your domains and track the interview queue live.";
+  "Sign in with Google — create rooms with admin and normal PINs, manage interview panels, and track candidate queues live.";
 
 export const metadata: Metadata = {
-  title: "Join the room",
+  title: "Sign in",
   description: joinDescription,
   alternates: { canonical: "/join" },
   openGraph: {
-    title: "Join the room",
+    title: "Sign in to PanelOps",
     description: joinDescription,
     url: "/join",
     siteName: SITE_NAME,
@@ -24,35 +20,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Join the room",
+    title: "Sign in to PanelOps",
     description: joinDescription,
   },
 };
-
-async function JoinPanelSection() {
-  // Panel list must be fresh at request time (people get added mid-event).
-  await connection();
-
-  const panels = await prisma.panel.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, description: true },
-  });
-
-  return (
-    <div className="w-full max-w-md animate-fade-up">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold tracking-tight">Enter the room</h2>
-        <p className="mt-1 text-sm text-ink-2">
-          {panels.length > 0
-            ? `${panels.length} domain panel${panels.length === 1 ? "" : "s"} are active right now.`
-            : "No panels are active yet — check back with the coordinator."}
-        </p>
-      </div>
-      <JoinForm panels={panels} />
-    </div>
-  );
-}
 
 export default function JoinPage() {
   return (
@@ -79,25 +50,25 @@ export default function JoinPage() {
             Recruitment day · Room check-in
           </span>
           <h1 className="mt-5 text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl">
-            Check in with your roll number and join the queue.
+            Sign in once and run the room from one board.
           </h1>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70">
-            Your roll number identifies you for the rest of the event. Pick the
-            domains you are reporting to and the live board will track you from
-            waiting to done.
+            Your Google account is your seat at the desk. Create rooms with an
+            admin and a normal PIN, manage panels, and watch candidates move
+            from waiting to done.
           </p>
           <ul className="mt-6 space-y-2.5 text-sm text-white/80">
             <li className="flex items-center gap-2.5">
               <span className="size-1.5 rounded-full bg-emerald-400" />
-              See the live queue before you walk over
+              Room admins create, edit, and delete panels
             </li>
             <li className="flex items-center gap-2.5">
               <span className="size-1.5 rounded-full bg-indigo-400" />
-              Panelists move you through the queue in one tap
+              Members join a room with a PIN and pick their panels
             </li>
             <li className="flex items-center gap-2.5">
               <span className="size-1.5 rounded-full bg-amber-400" />
-              Admins manage panels and members from the control room
+              Panelists move candidates through the queue in one tap
             </li>
           </ul>
         </div>
@@ -108,17 +79,21 @@ export default function JoinPage() {
       </aside>
 
       <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-8">
-        <Suspense
-          fallback={
-            <div className="w-full max-w-md space-y-4">
-              <Skeleton className="h-7 w-48" />
-              <Skeleton className="h-4 w-72" />
-              <Skeleton className="h-64 w-full" />
-            </div>
-          }
-        >
-          <JoinPanelSection />
-        </Suspense>
+        <div className="w-full max-w-md animate-fade-up space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              Welcome back
+            </h2>
+            <p className="mt-1 text-sm text-ink-2">
+              Continue with Google to reach your rooms.
+            </p>
+          </div>
+          <GoogleSignIn />
+          <p className="text-xs text-ink-3">
+            New here? Google creates your account on first sign-in — no extra
+            signup step.
+          </p>
+        </div>
       </main>
     </div>
   );

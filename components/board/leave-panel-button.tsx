@@ -11,9 +11,11 @@ import { leavePanel } from "@/lib/actions/panels";
 
 export function LeavePanelButton({
   panelId,
+  roomId,
   memberCount,
 }: {
   panelId: string;
+  roomId: string;
   memberCount: number;
 }) {
   const router = useRouter();
@@ -22,11 +24,11 @@ export function LeavePanelButton({
   const [open, setOpen] = useState(false);
 
   const confirmLeave = async () => {
-    const result = await executeAsync({ panelId });
+    const result = await executeAsync({ roomId, panelId });
     if (result.data) {
       setOpen(false);
       push({ title: "You left the panel", tone: "info" });
-      router.push("/board");
+      router.push(`/rooms/${roomId}/board`);
       return;
     }
     push({

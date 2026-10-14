@@ -13,7 +13,13 @@ export type BoardPanel = {
   done: number;
 };
 
-export function PanelCard({ panel }: { panel: BoardPanel }) {
+export function PanelCard({
+  panel,
+  roomId,
+}: {
+  panel: BoardPanel;
+  roomId: string;
+}) {
   return (
     <Card className="group relative flex flex-col gap-4 p-5 transition-shadow hover:shadow-pop">
       <div className="flex items-start justify-between gap-3">
@@ -31,7 +37,7 @@ export function PanelCard({ panel }: { panel: BoardPanel }) {
           ) : null}
         </div>
         <Link
-          href={`/board/${panel.id}`}
+          href={`/rooms/${roomId}/board/${panel.id}`}
           aria-label={`Open ${panel.name} board`}
           className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line bg-surface text-ink-3 transition group-hover:border-brand/40 group-hover:bg-brand-soft group-hover:text-brand-ink"
         >
@@ -50,7 +56,7 @@ export function PanelCard({ panel }: { panel: BoardPanel }) {
       </div>
 
       <Link
-        href={`/board/${panel.id}`}
+        href={`/rooms/${roomId}/board/${panel.id}`}
         className="absolute inset-0 rounded-2xl"
         aria-hidden="true"
         tabIndex={-1}

@@ -7,7 +7,7 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
+enum RoomRole {
   ADMIN
   USER
 }
@@ -18,38 +18,124 @@ enum CandidateStatus {
   DONE
 }
 
-/// A person who entered the room (roll number + PIN).
+/// A signed-in person (Google account, managed by better-auth).
 model User {
-  id        String   @id @default(cuid())
-  rollNo    String   @unique
-  name      String?
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  panels           PanelMembership[]
-  createdPanels    Panel[]           @relation("PanelCreator")
-  addedCandidates  Candidate[]       @relation("CandidateAdder")
+  sessions         Session[]
+  accounts         Account[]
+  roomMemberships RoomMembership[]
+  createdRooms     Room[]           @relation("RoomCreator")
+  createdPanels    Panel[]          @relation("PanelCreator")
+  panelMemberships PanelMembership[]
+  addedCandidates  Candidate[]      @relation("CandidateAdder")
 }
 
-/// A domain panel. Admin-created.
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  providerId            String
+  accountId             String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+/// A shared space panels live in. Access is granted by knowing a PIN.
+model Room {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  adminPin    String
+  normalPin   String
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User              @relation("RoomCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  members   RoomMembership[]
+  panels    Panel[]
+
+  @@index([createdById])
+}
+
+/// A user's standing in a room — role comes from which PIN they entered.
+model RoomMembership {
+  id       String   @id @default(cuid())
+  roomId   String
+  userId   String
+  role     RoomRole @default(USER)
+  joinedAt DateTime @default(now())
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([userId])
+}
+
+/// A domain panel inside a room. Room admins create/edit/delete these.
 model Panel {
   id          String   @id @default(cuid())
-  name        String   @unique
+  roomId      String
+  name        String
   description String?
   isActive    Boolean  @default(true)
   createdById String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy   User              @relation("PanelCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  members     PanelMembership[]
-  candidates  Candidate[]
+  room       Room               @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdBy  User               @relation("PanelCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  members    PanelMembership[]
+  candidates Candidate[]
 
+  @@unique([roomId, name])
+  @@index([roomId])
   @@index([createdById])
 }
 
-/// A user joined to a panel (staffing it). Admin auto-joins panels they create.
+/// A user staffing a panel. Admins auto-join the panels they create.
 model PanelMembership {
   id       String   @id @default(cuid())
   panelId  String
@@ -70,7 +156,6 @@ model Candidate {
   rollNo      String
   name        String?
   status      CandidateStatus @default(WAITING)
-  /// Ordering inside the current column (for kanban sorting).
   position    Int             @default(0)
   joinedAt    DateTime        @default(now())
   startedAt   DateTime?

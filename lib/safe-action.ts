@@ -22,16 +22,8 @@ export const authedClient = actionClient.use(async ({ next }) => {
   if (!user) {
     throw new ActionError(
       "UNAUTHENTICATED",
-      "Session expired. Please join again.",
+      "Session expired. Please sign in again.",
     );
   }
   return next({ ctx: { user } });
-});
-
-/** Requires the ADMIN role. */
-export const adminClient = authedClient.use(async ({ next, ctx }) => {
-  if (ctx.user.role !== "ADMIN") {
-    throw new ActionError("FORBIDDEN", "Administrator access required.");
-  }
-  return next({ ctx });
 });

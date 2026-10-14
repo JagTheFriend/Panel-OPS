@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function initials(name: string | null, rollNo: string): string {
+export function initials(name: string | null, fallback: string): string {
   if (name) {
     const parts = name.trim().split(/\s+/);
     if (parts.length >= 2) {
@@ -13,7 +13,7 @@ export function initials(name: string | null, rollNo: string): string {
     }
     return parts[0].slice(0, 2).toUpperCase();
   }
-  return rollNo.slice(0, 2).toUpperCase();
+  return fallback.slice(0, 2).toUpperCase();
 }
 
 export function formatDuration(ms: number): string {

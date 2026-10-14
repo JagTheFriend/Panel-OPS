@@ -1,15 +1,17 @@
 "use server";
 
 import { trackDomainEvent } from "@/lib/analytics/posthog-server";
+import { requireRoomAdminContext } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ActionError } from "@/lib/errors";
-import { adminClient } from "@/lib/safe-action";
-import { deleteUserSchema, setUserRoleSchema } from "@/lib/schemas";
+import { authedClient } from "@/lib/safe-action";
+import { removeRoomMemberSchema, setRoomMemberRoleSchema } from "@/lib/schemas";
 
-export const setUserRole = adminClient
-  .inputSchema(setUserRoleSchema)
+export const setRoomMemberRole = authedClient
+  .inputSchema(setRoomMemberRoleSchema)
   .action(async ({ parsedInput, ctx }) => {
-    const { userId, role } = parsedInput;
+    const { roomId, userId, role } = parsedInput;
+    const roomCtx = await requireRoomAdminContext(roomId, ctx.user.id);
 
     if (userId === ctx.user.id && role !== "ADMIN") {
       throw new ActionError(
@@ -18,53 +20,59 @@ export const setUserRole = adminClient
       );
     }
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
+    const membership = await prisma.roomMembership.findUnique({
+      where: { roomId_userId: { roomId, userId } },
+    });
+    if (!membership) {
       throw new ActionError("NOT_FOUND", "Member not found.");
     }
-    if (user.role === role) return { id: userId };
+    if (membership.role === role) return { id: userId };
 
-    const updated = await prisma.user.update({
-      where: { id: userId },
+    await prisma.roomMembership.update({
+      where: { id: membership.id },
       data: { role },
     });
 
-    trackDomainEvent(ctx.user, "member role changed", {
-      member_roll: updated.rollNo,
-      new_role: role,
-    });
+    trackDomainEvent(
+      { id: ctx.user.id, role: roomCtx.role },
+      "member role changed",
+      {
+        room_id: roomId,
+        member_user: userId,
+        new_role: role,
+      },
+    );
 
-    return { id: updated.id };
+    return { id: userId };
   });
 
-export const deleteUser = adminClient
-  .inputSchema(deleteUserSchema)
+export const removeRoomMember = authedClient
+  .inputSchema(removeRoomMemberSchema)
   .action(async ({ parsedInput, ctx }) => {
-    if (parsedInput.userId === ctx.user.id) {
-      throw new ActionError("CONFLICT", "You cannot delete your own account.");
+    const { roomId, userId } = parsedInput;
+    const roomCtx = await requireRoomAdminContext(roomId, ctx.user.id);
+
+    if (userId === ctx.user.id) {
+      throw new ActionError("CONFLICT", "You cannot remove yourself.");
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: parsedInput.userId },
+    const membership = await prisma.roomMembership.findUnique({
+      where: { roomId_userId: { roomId, userId } },
     });
-    if (!user) {
+    if (!membership) {
       throw new ActionError("NOT_FOUND", "Member not found.");
     }
 
-    await prisma.$transaction(async (tx) => {
-      // Hand their panels to the acting admin — deleting the creator must
-      // never take the panels (and every candidate on them) down too.
-      await tx.panel.updateMany({
-        where: { createdById: user.id },
-        data: { createdById: ctx.user.id },
-      });
-      await tx.user.delete({ where: { id: user.id } });
-    });
+    await prisma.roomMembership.delete({ where: { id: membership.id } });
 
-    trackDomainEvent(ctx.user, "member deleted", {
-      member_roll: user.rollNo,
-      member_role: user.role,
-    });
+    trackDomainEvent(
+      { id: ctx.user.id, role: roomCtx.role },
+      "room member removed",
+      {
+        room_id: roomId,
+        member_user: userId,
+      },
+    );
 
-    return { id: user.id };
+    return { id: userId };
   });

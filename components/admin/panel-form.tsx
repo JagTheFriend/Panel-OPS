@@ -112,9 +112,11 @@ function FormError({ message }: { message?: string }) {
 
 export function CreatePanelModal({
   open,
+  roomId,
   onClose,
 }: {
   open: boolean;
+  roomId: string;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -168,6 +170,7 @@ export function CreatePanelModal({
           if (isExecuting) return;
           const form = new FormData(event.currentTarget);
           execute({
+            roomId,
             name: String(form.get("name") ?? ""),
             description: String(form.get("description") ?? "") || undefined,
           });
@@ -193,10 +196,12 @@ export function CreatePanelModal({
 export function EditPanelModal({
   open,
   panel,
+  roomId,
   onClose,
 }: {
   open: boolean;
   panel: ControlPanel | null;
+  roomId: string;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -263,6 +268,7 @@ export function EditPanelModal({
           if (isExecuting || !panel) return;
           const form = new FormData(event.currentTarget);
           execute({
+            roomId,
             id: panel.id,
             name: String(form.get("name") ?? ""),
             description: String(form.get("description") ?? "") || undefined,

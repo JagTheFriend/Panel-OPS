@@ -6,7 +6,7 @@ import { BoardEmptyCta, PanelCard } from "@/components/board/panel-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, EmptyState } from "@/components/ui/empty-state";
 import { LiveDot } from "@/components/ui/spinner";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getRoomContext } from "@/lib/auth";
 import { getBoardOverview } from "@/lib/data/queries";
 
 export const metadata = { title: "Board" };
@@ -19,12 +19,22 @@ const tiles = [
   { key: "done", label: "Done" },
 ] as const;
 
-export default async function BoardPage() {
+export default async function BoardPage({
+  params,
+}: {
+  params: Promise<{ roomId: string }>;
+}) {
+  const { roomId } = await params;
   await connection();
+
   const user = await getCurrentUser();
   if (!user) redirect("/api/session/clear");
 
-  const panels = await getBoardOverview(user.id, user.role === "ADMIN");
+  const roomCtx = await getRoomContext(roomId, user.id);
+  if (!roomCtx) redirect("/rooms");
+
+  const isAdmin = roomCtx.role === "ADMIN";
+  const panels = await getBoardOverview(roomId, user.id, isAdmin);
 
   const totals = {
     panels: panels.length,
@@ -39,7 +49,9 @@ export default async function BoardPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Live board</h1>
           <p className="mt-1 text-sm text-ink-2">
-            Queues and interview progress across your domain panels.
+            {isAdmin
+              ? "Queues and interview progress across every panel in this room."
+              : "Queues and interview progress across the panels you joined."}
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -47,9 +59,9 @@ export default async function BoardPage() {
             <LiveDot />
             Live
           </Badge>
-          {user.role === "ADMIN" ? (
+          {isAdmin ? (
             <Link
-              href="/admin/panels"
+              href={`/rooms/${roomId}/admin/panels`}
               className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-brand px-3.5 text-sm font-medium text-white shadow-card transition hover:bg-brand-hover active:scale-[0.98]"
             >
               <Plus className="size-4" />
@@ -80,7 +92,7 @@ export default async function BoardPage() {
               className="animate-fade-up"
               style={{ animationDelay: `${index * 45}ms` }}
             >
-              <PanelCard panel={panel} />
+              <PanelCard panel={panel} roomId={roomId} />
             </div>
           ))}
         </div>
@@ -88,7 +100,11 @@ export default async function BoardPage() {
         <EmptyState
           icon={<Columns3 className="size-5" />}
           title="No active panels yet"
-          description="Admins create domain panels from the control room — they will show up here instantly."
+          description={
+            isAdmin
+              ? "Create domain panels from the control room — they will show up here instantly."
+              : "Room admins have not created any panels yet — check back with the coordinator."
+          }
           action={<BoardEmptyCta />}
         />
       )}

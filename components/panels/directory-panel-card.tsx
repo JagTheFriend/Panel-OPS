@@ -35,7 +35,13 @@ function PanelStat({ label, value }: { label: string; value: number }) {
   );
 }
 
-export function DirectoryPanelCard({ panel }: { panel: DirectoryPanel }) {
+export function DirectoryPanelCard({
+  panel,
+  roomId,
+}: {
+  panel: DirectoryPanel;
+  roomId: string;
+}) {
   const router = useRouter();
   const { push } = useToast();
 
@@ -99,7 +105,7 @@ export function DirectoryPanelCard({ panel }: { panel: DirectoryPanel }) {
         {panel.joined ? (
           <>
             <Link
-              href={`/board/${panel.id}`}
+              href={`/rooms/${roomId}/board/${panel.id}`}
               className={cn(
                 actionBase,
                 "bg-brand text-white shadow-sm hover:bg-brand-hover",
@@ -111,7 +117,7 @@ export function DirectoryPanelCard({ panel }: { panel: DirectoryPanel }) {
             <Button
               variant="ghost"
               loading={leave.isExecuting}
-              onClick={() => leave.execute({ panelId: panel.id })}
+              onClick={() => leave.execute({ roomId, panelId: panel.id })}
             >
               Leave
             </Button>
@@ -120,12 +126,12 @@ export function DirectoryPanelCard({ panel }: { panel: DirectoryPanel }) {
           <>
             <Button
               loading={join.isExecuting}
-              onClick={() => join.execute({ panelId: panel.id })}
+              onClick={() => join.execute({ roomId, panelId: panel.id })}
             >
               Join
             </Button>
             <Link
-              href={`/board/${panel.id}`}
+              href={`/rooms/${roomId}/board/${panel.id}`}
               className={cn(
                 actionBase,
                 "border border-line-strong bg-surface text-ink shadow-card hover:bg-surface-2",

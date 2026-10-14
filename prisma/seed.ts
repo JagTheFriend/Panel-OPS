@@ -1,59 +1,135 @@
+import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
-import { readDomainConfig } from "../lib/config";
+import { signedSessionCookie } from "./session-cookie";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+const SESSION_TOKENS = {
+  admin: "dev-session-admin",
+  member: "dev-session-member",
+  outsider: "dev-session-outsider",
+  signout: "dev-session-signout",
+};
+
+const DEMO_ROOM = {
+  name: "Demo Room",
+  code: "DEMO42",
+  adminPin: "7331",
+  normalPin: "1234",
+};
+
+const DOMAINS = [
+  {
+    name: "Web Development",
+    description: "Frontend, backend, and full-stack queues",
+  },
+  {
+    name: "Data Science",
+    description: "ML, analytics, and data engineering queues",
+  },
+  {
+    name: "UI/UX Design",
+    description: "Product design and research queues",
+  },
+  {
+    name: "DevOps & Cloud",
+    description: "Infrastructure, SRE, and platform queues",
+  },
+];
+
+async function ensureUser(email: string, name: string) {
+  return prisma.user.upsert({
+    where: { email },
+    update: { name },
+    create: { name, email, emailVerified: true },
+  });
+}
+
+async function ensureSession(userId: string, token: string) {
+  const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  return prisma.session.upsert({
+    where: { token },
+    update: { userId, expiresAt },
+    create: { userId, token, expiresAt },
+  });
+}
+
 async function main() {
-  const admin = await prisma.user.upsert({
-    where: { rollNo: "9001" },
-    update: { role: "ADMIN" },
-    create: { rollNo: "9001", name: "Admin Coordinator", role: "ADMIN" },
+  const admin = await ensureUser("admin@panelops.dev", "Admin Coordinator");
+  const member = await ensureUser("member@panelops.dev", "Priya Panelist");
+  const outsider = await ensureUser("outsider@panelops.dev", "New Signin");
+
+  await ensureSession(admin.id, SESSION_TOKENS.admin);
+  await ensureSession(member.id, SESSION_TOKENS.member);
+  await ensureSession(outsider.id, SESSION_TOKENS.outsider);
+  await ensureSession(admin.id, SESSION_TOKENS.signout);
+
+  const room = await prisma.room.upsert({
+    where: { code: DEMO_ROOM.code },
+    update: {
+      name: DEMO_ROOM.name,
+      adminPin: DEMO_ROOM.adminPin,
+      normalPin: DEMO_ROOM.normalPin,
+    },
+    create: {
+      ...DEMO_ROOM,
+      createdById: admin.id,
+    },
   });
 
-  const coordinator = await prisma.user.upsert({
-    where: { rollNo: "9002" },
-    update: {},
-    create: { rollNo: "9002", name: "Room Coordinator", role: "USER" },
-  });
-
-  const domains = readDomainConfig().DOMAINS ?? [];
-  if (domains.length === 0) {
-    throw new Error("domain.json has no DOMAINS entries");
+  for (const [userId, role] of [
+    [admin.id, "ADMIN"],
+    [member.id, "USER"],
+  ] as const) {
+    await prisma.roomMembership.upsert({
+      where: { roomId_userId: { roomId: room.id, userId } },
+      update: { role },
+      create: { roomId: room.id, userId, role },
+    });
   }
 
-  for (const data of domains) {
+  const memberPanels = ["Web Development", "Data Science"];
+
+  for (const data of DOMAINS) {
     const panel = await prisma.panel.upsert({
-      where: { name: data.name },
-      update: { description: data.description ?? null, isActive: true },
+      where: { roomId_name: { roomId: room.id, name: data.name } },
+      update: { description: data.description, isActive: true },
       create: {
+        roomId: room.id,
         name: data.name,
-        description: data.description ?? null,
+        description: data.description,
         createdById: admin.id,
       },
     });
 
-    await prisma.panelMembership.upsert({
-      where: { panelId_userId: { panelId: panel.id, userId: admin.id } },
-      update: {},
-      create: { panelId: panel.id, userId: admin.id },
-    });
+    const joiners = memberPanels.includes(data.name)
+      ? [admin.id, member.id]
+      : [admin.id];
+    for (const userId of joiners) {
+      await prisma.panelMembership.upsert({
+        where: { panelId_userId: { panelId: panel.id, userId } },
+        update: {},
+        create: { panelId: panel.id, userId },
+      });
+    }
   }
 
   await prisma.panel.updateMany({
     where: {
-      name: { notIn: domains.map((data) => data.name) },
+      roomId: room.id,
+      name: { notIn: DOMAINS.map((data) => data.name) },
       isActive: true,
-      // Only retire panels this seed created — never panels admins made in
-      // the control room.
       createdById: admin.id,
     },
     data: { isActive: false },
   });
 
   const webPanel = await prisma.panel.findUnique({
-    where: { name: "Web Development" },
+    where: {
+      roomId_name: { roomId: room.id, name: "Web Development" },
+    },
     include: { candidates: true },
   });
 
@@ -79,7 +155,7 @@ async function main() {
       await prisma.candidate.create({
         data: {
           panelId: webPanel.id,
-          addedById: coordinator.id,
+          addedById: admin.id,
           position: position++,
           startedAt: sample.status === "WAITING" ? null : new Date(),
           completedAt: sample.status === "DONE" ? new Date() : null,
@@ -90,9 +166,14 @@ async function main() {
   }
 
   console.log("Seed complete:", {
-    admin: admin.rollNo,
-    coordinator: coordinator.rollNo,
-    panels: domains.length,
+    room: `${DEMO_ROOM.name} (${DEMO_ROOM.code})`,
+    pins: `admin ${DEMO_ROOM.adminPin} / normal ${DEMO_ROOM.normalPin}`,
+    panels: DOMAINS.length,
+    sessions: {
+      admin: signedSessionCookie(SESSION_TOKENS.admin),
+      member: signedSessionCookie(SESSION_TOKENS.member),
+      outsider: signedSessionCookie(SESSION_TOKENS.outsider),
+    },
   });
 }
 

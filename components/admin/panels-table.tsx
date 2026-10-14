@@ -23,13 +23,12 @@ export type ControlPanel = {
   description: string | null;
   isActive: boolean;
   createdById: string;
-  createdByRollNo: string;
+  createdByLabel: string;
   queueCount: number;
   members: {
     userId: string;
-    rollNo: string;
     name: string | null;
-    role: "ADMIN" | "USER";
+    email: string;
     joinedAt: string;
     isCreator: boolean;
   }[];
@@ -46,7 +45,13 @@ const headings = [
   { label: "Actions", className: "px-4 py-2.5 text-right" },
 ] as const;
 
-export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
+export function PanelsControl({
+  panels,
+  roomId,
+}: {
+  panels: ControlPanel[];
+  roomId: string;
+}) {
   const router = useRouter();
   const { push } = useToast();
   const [createOpen, setCreateOpen] = useState(false);
@@ -90,6 +95,7 @@ export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
         />
         <CreatePanelModal
           open={createOpen}
+          roomId={roomId}
           onClose={() => setCreateOpen(false)}
         />
       </div>
@@ -189,8 +195,8 @@ export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
                     <td className="hidden px-3 py-3 text-right font-mono text-ink-2 tabular-nums lg:table-cell">
                       {panel.queueCount}
                     </td>
-                    <td className="hidden px-3 py-3 font-mono text-xs text-ink-2 lg:table-cell">
-                      {panel.createdByRollNo}
+                    <td className="hidden max-w-40 px-3 py-3 text-xs truncate text-ink-2 lg:table-cell">
+                      {panel.createdByLabel}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
@@ -232,11 +238,13 @@ export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
 
       <CreatePanelModal
         open={createOpen}
+        roomId={roomId}
         onClose={() => setCreateOpen(false)}
       />
       <EditPanelModal
         open={editing !== null}
         panel={editing}
+        roomId={roomId}
         onClose={() => setEditing(null)}
       />
       <ConfirmDialog
@@ -244,7 +252,7 @@ export function PanelsControl({ panels }: { panels: ControlPanel[] }) {
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (deleteTarget) {
-            remove.execute({ panelId: deleteTarget.id });
+            remove.execute({ roomId, panelId: deleteTarget.id });
           }
         }}
         title={deleteTarget ? `Delete “${deleteTarget.name}”?` : "Delete panel"}

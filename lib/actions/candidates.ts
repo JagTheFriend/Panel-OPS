@@ -1,14 +1,14 @@
 "use server";
 
 import { trackDomainEvent } from "@/lib/analytics/posthog-server";
-import { assertPanelAccess } from "@/lib/auth";
+import { requirePanelAdminContext, requirePanelStaffContext } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ActionError, isUniqueViolation } from "@/lib/errors";
 import {
   applyStatusTransition,
   type CandidateStatus,
 } from "@/lib/logic/candidates";
-import { adminClient, authedClient } from "@/lib/safe-action";
+import { authedClient } from "@/lib/safe-action";
 import {
   addCandidateSchema,
   candidateStatusSchema,
@@ -21,19 +21,18 @@ function orderByPosition() {
   return [{ position: "asc" as const }, { joinedAt: "asc" as const }];
 }
 
-export const addCandidate = adminClient
+export const addCandidate = authedClient
   .inputSchema(addCandidateSchema)
   .action(async ({ parsedInput, ctx }) => {
     const { panelId, rollNo, name } = parsedInput;
 
-    const panel = await prisma.panel.findUnique({ where: { id: panelId } });
-    if (!panel || !panel.isActive) {
+    const panelCtx = await requirePanelAdminContext(panelId, ctx.user.id);
+    if (!panelCtx.panel.isActive) {
       throw new ActionError(
         "NOT_FOUND",
         "Panel not found or no longer active.",
       );
     }
-    await assertPanelAccess(ctx.user, panelId);
 
     const duplicate = await prisma.candidate.findUnique({
       where: { panelId_rollNo: { panelId, rollNo } },
@@ -70,11 +69,16 @@ export const addCandidate = adminClient
         );
       });
 
-    trackDomainEvent(ctx.user, "candidate added", {
-      panel_id: panelId,
-      panel_name: panel.name,
-      candidate_roll: rollNo,
-    });
+    trackDomainEvent(
+      { id: ctx.user.id, role: panelCtx.role },
+      "candidate added",
+      {
+        room_id: panelCtx.room.id,
+        panel_id: panelId,
+        panel_name: panelCtx.panel.name,
+        candidate_roll: rollNo,
+      },
+    );
 
     return { id: candidate.id };
   });
@@ -189,7 +193,10 @@ export const setCandidateStatus = authedClient
     if (!existing) {
       throw new ActionError("NOT_FOUND", "Candidate not found.");
     }
-    await assertPanelAccess(ctx.user, existing.panelId);
+    const panelCtx = await requirePanelStaffContext(
+      existing.panelId,
+      ctx.user.id,
+    );
 
     const result = await moveCandidate(id, status, index);
 
@@ -202,6 +209,7 @@ export const setCandidateStatus = authedClient
             : "interview reopened";
 
       const properties: Record<string, string | number | boolean | null> = {
+        room_id: panelCtx.room.id,
         panel_id: existing.panelId,
         candidate_roll: existing.rollNo,
         from_status: result.fromStatus,
@@ -217,7 +225,11 @@ export const setCandidateStatus = authedClient
           Date.now() - result.candidate.joinedAt.getTime();
       }
 
-      trackDomainEvent(ctx.user, eventName, properties);
+      trackDomainEvent(
+        { id: ctx.user.id, role: panelCtx.role },
+        eventName,
+        properties,
+      );
     }
 
     return { id, status };
@@ -227,7 +239,7 @@ export const reorderCandidates = authedClient
   .inputSchema(reorderCandidatesSchema)
   .action(async ({ parsedInput, ctx }) => {
     const { panelId, orderedIds } = parsedInput;
-    await assertPanelAccess(ctx.user, panelId);
+    await requirePanelStaffContext(panelId, ctx.user.id);
 
     const candidates = await prisma.candidate.findMany({
       where: { panelId, id: { in: orderedIds } },
@@ -261,19 +273,27 @@ export const updateCandidate = authedClient
     if (!candidate) {
       throw new ActionError("NOT_FOUND", "Candidate not found.");
     }
-    await assertPanelAccess(ctx.user, candidate.panelId);
+    const panelCtx = await requirePanelStaffContext(
+      candidate.panelId,
+      ctx.user.id,
+    );
 
     await prisma.candidate.update({ where: { id }, data: { name } });
 
-    trackDomainEvent(ctx.user, "candidate updated", {
-      panel_id: candidate.panelId,
-      candidate_roll: candidate.rollNo,
-    });
+    trackDomainEvent(
+      { id: ctx.user.id, role: panelCtx.role },
+      "candidate updated",
+      {
+        room_id: panelCtx.room.id,
+        panel_id: candidate.panelId,
+        candidate_roll: candidate.rollNo,
+      },
+    );
 
     return { id };
   });
 
-export const removeCandidate = adminClient
+export const removeCandidate = authedClient
   .inputSchema(removeCandidateSchema)
   .action(async ({ parsedInput, ctx }) => {
     const candidate = await prisma.candidate.findUnique({
@@ -282,11 +302,15 @@ export const removeCandidate = adminClient
     if (!candidate) {
       throw new ActionError("NOT_FOUND", "Candidate not found.");
     }
-    await assertPanelAccess(ctx.user, candidate.panelId);
+    const panelCtx = await requirePanelAdminContext(
+      candidate.panelId,
+      ctx.user.id,
+    );
 
     await prisma.candidate.delete({ where: { id: candidate.id } });
 
     const properties: Record<string, string | number | boolean | null> = {
+      room_id: panelCtx.room.id,
       panel_id: candidate.panelId,
       candidate_roll: candidate.rollNo,
       status: candidate.status,
@@ -296,7 +320,11 @@ export const removeCandidate = adminClient
         candidate.completedAt.getTime() - candidate.startedAt.getTime();
     }
 
-    trackDomainEvent(ctx.user, "candidate removed", properties);
+    trackDomainEvent(
+      { id: ctx.user.id, role: panelCtx.role },
+      "candidate removed",
+      properties,
+    );
 
     return { id: candidate.id };
   });

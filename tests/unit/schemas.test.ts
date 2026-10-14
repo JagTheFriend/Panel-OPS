@@ -3,11 +3,12 @@ import {
   addCandidateSchema,
   candidateStatusSchema,
   createPanelSchema,
+  createRoomSchema,
   joinRoomSchema,
   pinSchema,
   reorderCandidatesSchema,
   rollNoSchema,
-  setUserRoleSchema,
+  setRoomMemberRoleSchema,
   updateCandidateSchema,
 } from "@/lib/schemas";
 
@@ -54,50 +55,89 @@ describe("pinSchema", () => {
 });
 
 describe("joinRoomSchema", () => {
-  it("requires a name and keeps panelIds optional at the schema level", () => {
-    const missingName = joinRoomSchema.safeParse({
-      rollNo: "9001",
-      pin: "7331",
-    });
-    expect(missingName.success).toBe(false);
+  it("requires a room code and a pin", () => {
+    const missingPin = joinRoomSchema.safeParse({ code: "DEMO42" });
+    expect(missingPin.success).toBe(false);
 
-    const result = joinRoomSchema.safeParse({
-      rollNo: "9001",
-      pin: "7331",
-      name: "Diya Patel",
-      panelIds: [],
-    });
+    const missingCode = joinRoomSchema.safeParse({ pin: "1234" });
+    expect(missingCode.success).toBe(false);
+
+    const result = joinRoomSchema.safeParse({ code: "DEMO42", pin: "1234" });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.panelIds).toEqual([]);
-      expect(result.data.name).toBe("Diya Patel");
+      expect(result.data.code).toBe("DEMO42");
+      expect(result.data.pin).toBe("1234");
     }
   });
 
-  it("rejects an oversized panelIds list", () => {
-    const result = joinRoomSchema.safeParse({
-      rollNo: "9001",
-      pin: "7331",
-      name: "Diya Patel",
-      panelIds: Array.from({ length: 26 }, (_, i) => `p${i}`),
-    });
-    expect(result.success).toBe(false);
+  it("trims and accepts mixed-case codes", () => {
+    const result = joinRoomSchema.safeParse({ code: "  ab3k9z ", pin: "7331" });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.code).toBe("ab3k9z");
   });
 
-  it("requires a valid roll number", () => {
+  it("rejects codes with symbols or too short", () => {
     expect(
-      joinRoomSchema.safeParse({
-        rollNo: "x1",
-        pin: "1234",
-        name: "Diya Patel",
+      joinRoomSchema.safeParse({ code: "AB-3K", pin: "1234" }).success,
+    ).toBe(false);
+    expect(joinRoomSchema.safeParse({ code: "AB", pin: "1234" }).success).toBe(
+      false,
+    );
+  });
+
+  it("requires a valid pin length", () => {
+    expect(
+      joinRoomSchema.safeParse({ code: "DEMO42", pin: "12" }).success,
+    ).toBe(false);
+  });
+});
+
+describe("createRoomSchema", () => {
+  it("accepts a name with two different pins", () => {
+    const result = createRoomSchema.safeParse({
+      name: "Tech Symposium",
+      adminPin: "7331",
+      normalPin: "1234",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects identical admin and normal pins", () => {
+    const result = createRoomSchema.safeParse({
+      name: "Tech Symposium",
+      adminPin: "1234",
+      normalPin: "1234",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe(
+        "Admin and normal PIN must differ",
+      );
+    }
+  });
+
+  it("rejects short room names and short pins", () => {
+    expect(
+      createRoomSchema.safeParse({
+        name: "A",
+        adminPin: "7331",
+        normalPin: "1234",
+      }).success,
+    ).toBe(false);
+    expect(
+      createRoomSchema.safeParse({
+        name: "Tech Symposium",
+        adminPin: "12",
+        normalPin: "1234",
       }).success,
     ).toBe(false);
   });
 });
 
 describe("createPanelSchema", () => {
-  it("accepts a name and optional description", () => {
+  it("accepts a room id, name, and optional description", () => {
     const result = createPanelSchema.safeParse({
+      roomId: "r1",
       name: "Web Development",
       description: "Frontend queue",
     });
@@ -108,8 +148,14 @@ describe("createPanelSchema", () => {
     }
   });
 
+  it("requires a roomId", () => {
+    expect(createPanelSchema.safeParse({ name: "Web Dev" }).success).toBe(
+      false,
+    );
+  });
+
   it("rejects a too-short domain name", () => {
-    const result = createPanelSchema.safeParse({ name: "a" });
+    const result = createPanelSchema.safeParse({ roomId: "r1", name: "a" });
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues[0].message).toBe("Domain name is too short");
@@ -175,13 +221,25 @@ describe("updateCandidateSchema", () => {
   });
 });
 
-describe("setUserRoleSchema", () => {
-  it("only allows the two roles", () => {
+describe("setRoomMemberRoleSchema", () => {
+  it("only allows the two roles and requires room + user", () => {
     expect(
-      setUserRoleSchema.safeParse({ userId: "u1", role: "ADMIN" }).success,
+      setRoomMemberRoleSchema.safeParse({
+        roomId: "r1",
+        userId: "u1",
+        role: "ADMIN",
+      }).success,
     ).toBe(true);
     expect(
-      setUserRoleSchema.safeParse({ userId: "u1", role: "OWNER" }).success,
+      setRoomMemberRoleSchema.safeParse({
+        roomId: "r1",
+        userId: "u1",
+        role: "OWNER",
+      }).success,
+    ).toBe(false);
+    expect(
+      setRoomMemberRoleSchema.safeParse({ userId: "u1", role: "ADMIN" })
+        .success,
     ).toBe(false);
   });
 });

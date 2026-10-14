@@ -10,7 +10,13 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 
-export function PanelsDirectory({ panels }: { panels: DirectoryPanel[] }) {
+export function PanelsDirectory({
+  panels,
+  roomId,
+}: {
+  panels: DirectoryPanel[];
+  roomId: string;
+}) {
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -28,7 +34,7 @@ export function PanelsDirectory({ panels }: { panels: DirectoryPanel[] }) {
       <EmptyState
         icon={<PanelsTopLeft className="size-5" />}
         title="No panels yet"
-        description="Admins add domains from the control room — members pick them when they check in."
+        description="Admins add panels from the control room — members join them from here."
       />
     );
   }
@@ -66,7 +72,7 @@ export function PanelsDirectory({ panels }: { panels: DirectoryPanel[] }) {
               className="animate-fade-up"
               style={{ animationDelay: `${Math.min(index, 12) * 45}ms` }}
             >
-              <DirectoryPanelCard panel={panel} />
+              <DirectoryPanelCard panel={panel} roomId={roomId} />
             </div>
           ))}
         </div>

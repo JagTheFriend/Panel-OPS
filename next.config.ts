@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   // PostHog's capture endpoint uses a trailing slash (/e/…).
   skipTrailingSlashRedirect: posthogProxied,
+  async redirects() {
+    return [
+      { source: "/board/:path*", destination: "/rooms", permanent: true },
+      { source: "/panels", destination: "/rooms", permanent: true },
+      { source: "/admin/panels", destination: "/rooms", permanent: true },
+      { source: "/admin/members", destination: "/rooms", permanent: true },
+    ];
+  },
   async rewrites() {
     if (!posthogProxied) return [];
     return [

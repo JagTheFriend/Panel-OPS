@@ -4,26 +4,25 @@ import posthog from "posthog-js";
 import { useEffect } from "react";
 
 /**
- * Binds the browser session to the room participant's roll number so PostHog
- * events are attributed to a person (and heatmaps/funnels can be filtered by role).
+ * Binds the browser session to the signed-in account so PostHog events are
+ * attributed to a person (and heatmaps/funnels can be filtered by name/email).
  */
 export function IdentityBridge({
-  rollNo,
+  id,
   name,
-  role,
+  email,
 }: {
-  rollNo: string;
-  name: string | null;
-  role: string;
+  id: string;
+  name: string;
+  email: string;
 }) {
   useEffect(() => {
-    if (!rollNo) return;
-    posthog.identify(`roll:${rollNo}`, {
-      roll: rollNo,
-      name: name ?? undefined,
-      role,
+    if (!id) return;
+    posthog.identify(`user:${id}`, {
+      email,
+      name,
     });
-  }, [rollNo, name, role]);
+  }, [id, name, email]);
 
   return null;
 }

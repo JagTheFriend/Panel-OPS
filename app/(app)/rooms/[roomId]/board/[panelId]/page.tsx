@@ -7,7 +7,7 @@ import { JoinPanelCta } from "@/components/board/join-panel-cta";
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { PanelHeader } from "@/components/board/panel-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getRoomContext } from "@/lib/auth";
 import { getPanelBoard, getPanelName } from "@/lib/data/queries";
 
 export const instant = false;
@@ -15,7 +15,7 @@ export const instant = false;
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ panelId: string }>;
+  params: Promise<{ roomId: string; panelId: string }>;
 }): Promise<Metadata> {
   const { panelId } = await params;
   const name = await getPanelName(panelId);
@@ -30,19 +30,24 @@ export async function generateMetadata({
 export default async function PanelBoardPage({
   params,
 }: {
-  params: Promise<{ panelId: string }>;
+  params: Promise<{ roomId: string; panelId: string }>;
 }) {
-  const { panelId } = await params;
+  const { roomId, panelId } = await params;
   await connection();
 
   const user = await getCurrentUser();
   if (!user) redirect("/api/session/clear");
 
-  const panel = await getPanelBoard(panelId);
-  if (!panel) notFound();
+  const roomCtx = await getRoomContext(roomId, user.id);
+  if (!roomCtx) redirect("/rooms");
 
-  const isMember = user.role === "ADMIN" || user.panelIds.includes(panel.id);
-  if (!isMember) {
+  const panel = await getPanelBoard(panelId, user.id);
+  if (!panel || panel.roomId !== roomId) notFound();
+
+  const isAdmin = roomCtx.role === "ADMIN";
+  const canView = isAdmin || panel.joined;
+
+  if (!canView) {
     if (!panel.isActive) {
       return (
         <div className="mx-auto w-full max-w-xl animate-fade-up pt-2">
@@ -57,6 +62,7 @@ export default async function PanelBoardPage({
 
     return (
       <JoinPanelCta
+        roomId={roomId}
         panel={{
           id: panel.id,
           name: panel.name,
@@ -71,16 +77,17 @@ export default async function PanelBoardPage({
       <PanelHeader
         panel={{
           id: panel.id,
+          roomId: panel.roomId,
           name: panel.name,
           description: panel.description,
           isActive: panel.isActive,
         }}
         members={panel.members}
         stats={panel.stats}
-        isAdmin={user.role === "ADMIN"}
+        isAdmin={isAdmin}
       />
 
-      {user.role === "ADMIN" ? (
+      {isAdmin ? (
         <div className="animate-fade-up" style={{ animationDelay: "50ms" }}>
           <AddCandidateForm panelId={panel.id} closed={!panel.isActive} />
         </div>
@@ -90,7 +97,7 @@ export default async function PanelBoardPage({
         <KanbanBoard
           panelId={panel.id}
           candidates={panel.candidates}
-          canRemove={user.role === "ADMIN"}
+          canRemove={isAdmin}
         />
       </div>
     </div>

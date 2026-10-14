@@ -2,10 +2,11 @@ import { ArrowLeft, Radio, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { LeavePanelButton } from "@/components/board/leave-panel-button";
 import { Badge } from "@/components/ui/badge";
-import { cn, initials } from "@/lib/utils";
+import { initials } from "@/lib/utils";
 
 type PanelSummary = {
   id: string;
+  roomId: string;
   name: string;
   description: string | null;
   isActive: boolean;
@@ -13,9 +14,8 @@ type PanelSummary = {
 
 type Member = {
   id: string;
-  rollNo: string;
+  email: string;
   name: string | null;
-  role: "ADMIN" | "USER";
 };
 
 type Stats = {
@@ -44,7 +44,7 @@ export function PanelHeader({
     <header className="animate-fade-up space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
-          href="/board"
+          href={`/rooms/${panel.roomId}/board`}
           className="group inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-xs font-medium text-ink-2 shadow-card transition hover:border-brand/40 hover:text-brand-ink"
         >
           <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
@@ -54,7 +54,7 @@ export function PanelHeader({
         <div className="flex items-center gap-2">
           {isAdmin ? (
             <Link
-              href="/admin/panels"
+              href={`/rooms/${panel.roomId}/admin/panels`}
               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-xs font-medium text-ink-2 shadow-card transition hover:border-brand/40 hover:bg-brand-soft hover:text-brand-ink"
             >
               <Settings2 className="size-3.5" />
@@ -62,7 +62,11 @@ export function PanelHeader({
             </Link>
           ) : null}
           {!isAdmin ? (
-            <LeavePanelButton panelId={panel.id} memberCount={members.length} />
+            <LeavePanelButton
+              panelId={panel.id}
+              roomId={panel.roomId}
+              memberCount={members.length}
+            />
           ) : null}
         </div>
       </div>
@@ -100,15 +104,10 @@ export function PanelHeader({
                 {visibleMembers.map((member) => (
                   <span
                     key={member.id}
-                    title={`${member.rollNo}${member.name ? ` · ${member.name}` : ""}`}
-                    className={cn(
-                      "flex size-8 items-center justify-center rounded-full border-2 border-surface font-mono text-[10px] font-semibold",
-                      member.role === "ADMIN"
-                        ? "bg-brand-soft text-brand-ink ring-2 ring-brand/25"
-                        : "bg-surface-2 text-ink-2",
-                    )}
+                    title={`${member.email}${member.name ? ` · ${member.name}` : ""}`}
+                    className="flex size-8 items-center justify-center rounded-full border-2 border-surface bg-surface-2 font-mono text-[10px] font-semibold text-ink-2"
                   >
-                    {initials(member.name, member.rollNo)}
+                    {initials(member.name, member.email)}
                   </span>
                 ))}
                 {extraMembers > 0 ? (

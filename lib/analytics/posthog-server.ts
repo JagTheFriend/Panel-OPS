@@ -56,16 +56,16 @@ async function captureServerEvent(input: {
  * Event naming follows PostHog's `[object] [verb]` convention.
  */
 export function trackDomainEvent(
-  actor: { rollNo: string; role: string },
+  actor: { id: string; role?: string | null },
   event: string,
   properties: EventProperties = {},
 ): void {
   const promise = captureServerEvent({
-    distinctId: `roll:${actor.rollNo}`,
+    distinctId: `user:${actor.id}`,
     event,
     properties: {
-      actor_roll: actor.rollNo,
-      actor_role: actor.role,
+      actor_user: actor.id,
+      actor_role: actor.role ?? null,
       ...properties,
     },
   });

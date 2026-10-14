@@ -12,8 +12,10 @@ import { joinPanel } from "@/lib/actions/panels";
 
 export function JoinPanelCta({
   panel,
+  roomId,
 }: {
   panel: { id: string; name: string; description: string | null };
+  roomId: string;
 }) {
   const router = useRouter();
   const { push } = useToast();
@@ -22,7 +24,7 @@ export function JoinPanelCta({
 
   const join = async () => {
     setError(null);
-    const result = await executeAsync({ panelId: panel.id });
+    const result = await executeAsync({ roomId, panelId: panel.id });
     if (result.data) {
       push({ title: `Joined ${panel.name}`, tone: "success" });
       router.refresh();
@@ -41,7 +43,7 @@ export function JoinPanelCta({
   return (
     <div className="animate-fade-up mx-auto w-full max-w-xl space-y-5 pt-2">
       <Link
-        href="/board"
+        href={`/rooms/${roomId}/board`}
         className="group inline-flex h-8 items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-xs font-medium text-ink-2 shadow-card transition hover:border-brand/40 hover:text-brand-ink"
       >
         <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
@@ -93,7 +95,7 @@ export function JoinPanelCta({
               Join this panel
             </Button>
             <Link
-              href="/board"
+              href={`/rooms/${roomId}/board`}
               className="inline-flex h-9.5 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-ink-2 transition-colors hover:text-ink"
             >
               <ArrowLeft className="size-4" />

@@ -11,26 +11,20 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
-import { deleteUser, setUserRole } from "@/lib/actions/users";
+import { removeRoomMember, setRoomMemberRole } from "@/lib/actions/users";
 import { cn } from "@/lib/utils";
 
 export type MemberRow = {
   id: string;
-  rollNo: string;
   name: string | null;
+  email: string;
   role: "ADMIN" | "USER";
-  createdAt: string;
+  joinedAt: string;
   panelCount: number;
-  addedCandidateCount: number;
-  createdPanelCount: number;
 };
 
 const headings = [
-  {
-    label: "Roll no",
-    title: "Roll number",
-    className: "px-4 py-2.5 text-left",
-  },
+  { label: "Email", title: "Email", className: "px-4 py-2.5 text-left" },
   {
     label: "Name",
     title: "Name",
@@ -43,18 +37,8 @@ const headings = [
     className: "hidden px-3 py-2.5 text-right lg:table-cell",
   },
   {
-    label: "Added",
-    title: "Candidates added",
-    className: "hidden px-3 py-2.5 text-right lg:table-cell",
-  },
-  {
-    label: "Created",
-    title: "Panels created",
-    className: "hidden px-3 py-2.5 text-right lg:table-cell",
-  },
-  {
     label: "Joined",
-    title: "Joined",
+    title: "Joined the room",
     className: "hidden px-3 py-2.5 text-left lg:table-cell",
   },
   { label: "Actions", title: "Actions", className: "px-4 py-2.5 text-right" },
@@ -62,9 +46,11 @@ const headings = [
 
 export function MembersTable({
   members,
+  roomId,
   currentUserId,
 }: {
   members: MemberRow[];
+  roomId: string;
   currentUserId: string;
 }) {
   const router = useRouter();
@@ -73,13 +59,13 @@ export function MembersTable({
   const [rolePendingId, setRolePendingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MemberRow | null>(null);
 
-  const roleChange = useAction(setUserRole, {
+  const roleChange = useAction(setRoomMemberRole, {
     onSuccess: ({ input }) => {
       setRolePendingId(null);
       const member = members.find((item) => item.id === input.userId);
       push({
         title: "Role updated",
-        description: `${member?.rollNo ?? "Member"} is now ${input.role === "ADMIN" ? "an admin" : "a member"}.`,
+        description: `${member?.email ?? "Member"} is now ${input.role === "ADMIN" ? "an admin" : "a member"}.`,
         tone: "success",
       });
       router.refresh();
@@ -94,16 +80,16 @@ export function MembersTable({
     },
   });
 
-  const remove = useAction(deleteUser, {
+  const remove = useAction(removeRoomMember, {
     onSuccess: () => {
       setDeleteTarget(null);
-      push({ title: "Member deleted", tone: "success" });
+      push({ title: "Member removed from the room", tone: "success" });
       router.refresh();
     },
     onError: ({ error }) => {
       setDeleteTarget(null);
       push({
-        title: "Could not delete member",
+        title: "Could not remove member",
         description: error.serverError?.message,
         tone: "error",
       });
@@ -115,7 +101,7 @@ export function MembersTable({
     if (!needle) return members;
     return members.filter(
       (member) =>
-        member.rollNo.toLowerCase().includes(needle) ||
+        member.email.toLowerCase().includes(needle) ||
         (member.name ?? "").toLowerCase().includes(needle),
     );
   }, [members, query]);
@@ -125,7 +111,7 @@ export function MembersTable({
       <EmptyState
         icon={<Search className="size-5" />}
         title="No members yet"
-        description="People appear here as soon as they join with a roll number and room PIN."
+        description="People appear here as soon as they join this room with its code and PIN."
       />
     );
   }
@@ -139,7 +125,7 @@ export function MembersTable({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search by roll number or name"
+            placeholder="Search by email or name"
             aria-label="Search members"
             className="pl-10"
           />
@@ -157,7 +143,7 @@ export function MembersTable({
         <EmptyState
           icon={<Search className="size-5" />}
           title="No members match your search"
-          description={`Nothing here matches “${query.trim()}”. Try another roll number or name.`}
+          description={`Nothing here matches “${query.trim()}”. Try another email or name.`}
           action={
             <Button variant="secondary" onClick={() => setQuery("")}>
               Clear search
@@ -166,7 +152,7 @@ export function MembersTable({
         />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-line bg-surface shadow-card">
-          <table className="w-full min-w-[22rem] text-sm sm:min-w-[30rem] lg:min-w-[56rem]">
+          <table className="w-full min-w-[22rem] text-sm sm:min-w-[30rem] lg:min-w-[48rem]">
             <thead>
               <tr className="border-b border-line bg-surface-2/70 text-[11px] font-semibold tracking-wider text-ink-3 uppercase">
                 {headings.map((heading) => (
@@ -194,8 +180,11 @@ export function MembersTable({
                   >
                     <td className="px-4 py-3">
                       <span className="flex items-center gap-2">
-                        <span className="font-mono text-[13px] font-semibold text-ink">
-                          {member.rollNo}
+                        <span
+                          className="max-w-[12rem] truncate font-mono text-[13px] font-semibold text-ink sm:max-w-[16rem]"
+                          title={member.email}
+                        >
+                          {member.email}
                         </span>
                         {isSelf ? <Badge tone="brand">You</Badge> : null}
                       </span>
@@ -215,14 +204,8 @@ export function MembersTable({
                     <td className="hidden px-3 py-3 text-right font-mono text-ink-2 tabular-nums lg:table-cell">
                       {member.panelCount}
                     </td>
-                    <td className="hidden px-3 py-3 text-right font-mono text-ink-2 tabular-nums lg:table-cell">
-                      {member.addedCandidateCount}
-                    </td>
-                    <td className="hidden px-3 py-3 text-right font-mono text-ink-2 tabular-nums lg:table-cell">
-                      {member.createdPanelCount}
-                    </td>
                     <td className="hidden px-3 py-3 text-xs whitespace-nowrap text-ink-3 lg:table-cell">
-                      <RelativeTime at={new Date(member.createdAt)} />
+                      <RelativeTime at={new Date(member.joinedAt)} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1.5">
@@ -239,6 +222,7 @@ export function MembersTable({
                               onClick={() => {
                                 setRolePendingId(member.id);
                                 roleChange.execute({
+                                  roomId,
                                   userId: member.id,
                                   role: "ADMIN",
                                 });
@@ -261,6 +245,7 @@ export function MembersTable({
                               onClick={() => {
                                 setRolePendingId(member.id);
                                 roleChange.execute({
+                                  roomId,
                                   userId: member.id,
                                   role: "USER",
                                 });
@@ -280,11 +265,11 @@ export function MembersTable({
                             size="sm"
                             className="text-danger-ink hover:bg-danger-soft"
                             onClick={() => setDeleteTarget(member)}
-                            aria-label={`Delete ${member.rollNo}`}
+                            aria-label={`Remove ${member.email} from the room`}
                           >
                             <Trash2 className="size-3.5" />
                             <span className="sr-only sm:not-sr-only">
-                              Delete
+                              Remove
                             </span>
                           </Button>
                         ) : null}
@@ -303,14 +288,16 @@ export function MembersTable({
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (deleteTarget) {
-            remove.execute({ userId: deleteTarget.id });
+            remove.execute({ roomId, userId: deleteTarget.id });
           }
         }}
         title={
-          deleteTarget ? `Delete ${deleteTarget.rollNo}?` : "Delete member"
+          deleteTarget
+            ? `Remove ${deleteTarget.email} from the room?`
+            : "Remove member"
         }
-        description="This removes their account and memberships. Panels they created transfer to you; queue entries they added stay. It cannot be undone."
-        confirmLabel="Delete member"
+        description="They lose access to this room's panels. They can rejoin any time with the room code and a PIN. It cannot be undone."
+        confirmLabel="Remove member"
         loading={remove.isExecuting}
       />
     </div>

@@ -4,6 +4,6 @@ export const SITE_URL =
 export const SITE_NAME = "PanelOps";
 
 export const SITE_DESCRIPTION =
-  "Live kanban board for recruitment panels: track queues and interview progress by domain.";
+  "Live kanban boards for recruitment rooms: PIN-based access, queues, and interview progress by domain panel.";
 
 export const SITE_TAGLINE = "Every panel. One live board.";

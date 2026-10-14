@@ -5,7 +5,7 @@ import {
   PanelsControl,
 } from "@/components/admin/panels-table";
 import { Card } from "@/components/ui/empty-state";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getRoomContext } from "@/lib/auth";
 import { getAdminPanels } from "@/lib/data/queries";
 
 export const metadata = { title: "Control room" };
@@ -18,13 +18,22 @@ const tiles = [
   { key: "members", label: "Memberships" },
 ] as const;
 
-export default async function AdminPanelsPage() {
+export default async function AdminPanelsPage({
+  params,
+}: {
+  params: Promise<{ roomId: string }>;
+}) {
+  const { roomId } = await params;
   await connection();
+
   const user = await getCurrentUser();
   if (!user) redirect("/api/session/clear");
-  if (user.role !== "ADMIN") redirect("/board");
 
-  const panels = await getAdminPanels();
+  const roomCtx = await getRoomContext(roomId, user.id);
+  if (!roomCtx) redirect("/rooms");
+  if (roomCtx.role !== "ADMIN") redirect(`/rooms/${roomId}/board`);
+
+  const panels = await getAdminPanels(roomId);
 
   const rows: ControlPanel[] = panels.map((panel) => ({
     id: panel.id,
@@ -32,15 +41,14 @@ export default async function AdminPanelsPage() {
     description: panel.description,
     isActive: panel.isActive,
     createdById: panel.createdById,
-    createdByRollNo: panel.createdBy.rollNo,
+    createdByLabel: panel.createdBy.name,
     queueCount: panel._count.candidates,
     members: panel.members.map((member) => ({
-      userId: member.userId,
-      rollNo: member.user.rollNo,
+      userId: member.user.id,
       name: member.user.name,
-      role: member.user.role,
+      email: member.user.email,
       joinedAt: member.joinedAt.toISOString(),
-      isCreator: member.userId === panel.createdById,
+      isCreator: member.user.id === panel.createdById,
     })),
   }));
 
@@ -79,7 +87,7 @@ export default async function AdminPanelsPage() {
         ))}
       </div>
 
-      <PanelsControl panels={rows} />
+      <PanelsControl panels={rows} roomId={roomId} />
     </div>
   );
 }
