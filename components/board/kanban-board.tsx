@@ -164,26 +164,38 @@ export function KanbanBoard({
   };
 
   const removeOne = async (candidate: BoardCandidate) => {
-    const result = await removeAction.executeAsync({ id: candidate.id });
-    if (result.data) {
-      router.refresh();
-      return true;
+    if (busyId) return false;
+    setBusyId(candidate.id);
+    try {
+      const result = await removeAction.executeAsync({ id: candidate.id });
+      if (result.data) {
+        router.refresh();
+        return true;
+      }
+      fail("Could not remove participant", result.serverError?.message);
+      return false;
+    } finally {
+      setBusyId(null);
     }
-    fail("Could not remove participant", result.serverError?.message);
-    return false;
   };
 
   const renameOne = async (candidate: BoardCandidate, name: string) => {
-    const result = await renameAction.executeAsync({
-      id: candidate.id,
-      name,
-    });
-    if (result.data) {
-      router.refresh();
-      return true;
+    if (busyId) return false;
+    setBusyId(candidate.id);
+    try {
+      const result = await renameAction.executeAsync({
+        id: candidate.id,
+        name,
+      });
+      if (result.data) {
+        router.refresh();
+        return true;
+      }
+      fail("Could not update the name", result.serverError?.message);
+      return false;
+    } finally {
+      setBusyId(null);
     }
-    fail("Could not update the name", result.serverError?.message);
-    return false;
   };
 
   const handleDragStart = ({ active }: DragStartEvent) => {
@@ -207,7 +219,7 @@ export function KanbanBoard({
   const handleDragEnd = async ({ active, over }: DragEndEvent) => {
     setActiveId(null);
     setOverStatus(null);
-    if (!over) return;
+    if (!over || busyId) return;
 
     const draggedId = String(active.id);
     const overId = String(over.id);
@@ -224,36 +236,41 @@ export function KanbanBoard({
         : null;
     if (!targetStatus) return;
 
-    if (targetStatus === dragged.status) {
-      const currentIds = columns[dragged.status].map((item) => item.id);
-      const fromIndex = currentIds.indexOf(draggedId);
-      const toIndex = currentIds.indexOf(overId);
-      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return;
+    setBusyId(draggedId);
+    try {
+      if (targetStatus === dragged.status) {
+        const currentIds = columns[dragged.status].map((item) => item.id);
+        const fromIndex = currentIds.indexOf(draggedId);
+        const toIndex = currentIds.indexOf(overId);
+        if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return;
 
-      const result = await reorderAction.executeAsync({
-        panelId,
-        orderedIds: arrayMove(currentIds, fromIndex, toIndex),
-      });
+        const result = await reorderAction.executeAsync({
+          panelId,
+          orderedIds: arrayMove(currentIds, fromIndex, toIndex),
+        });
+        if (result.data) {
+          router.refresh();
+          return;
+        }
+        fail("Could not reorder the queue", result.serverError?.message);
+        return;
+      }
+
+      const targetIds = columns[targetStatus].map((item) => item.id);
+      const insertAt = targetIds.indexOf(overId);
+      const result = await changeStatusAction.executeAsync(
+        insertAt >= 0
+          ? { id: draggedId, status: targetStatus, index: insertAt }
+          : { id: draggedId, status: targetStatus },
+      );
       if (result.data) {
         router.refresh();
         return;
       }
-      fail("Could not reorder the queue", result.serverError?.message);
-      return;
+      fail("Could not move candidate", result.serverError?.message);
+    } finally {
+      setBusyId(null);
     }
-
-    const targetIds = columns[targetStatus].map((item) => item.id);
-    const insertAt = targetIds.indexOf(overId);
-    const result = await changeStatusAction.executeAsync(
-      insertAt >= 0
-        ? { id: draggedId, status: targetStatus, index: insertAt }
-        : { id: draggedId, status: targetStatus },
-    );
-    if (result.data) {
-      router.refresh();
-      return;
-    }
-    fail("Could not move candidate", result.serverError?.message);
   };
 
   const handleDragCancel = () => {

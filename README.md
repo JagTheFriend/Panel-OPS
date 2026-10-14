@@ -127,7 +127,7 @@ app/(app)/layout.tsx ── Suspense-holed session check (defense in depth; keep
 lib/safe-action.ts ── actionClient / authedClient / adminClient (next-safe-action,
    │                  Zod input schemas from lib/schemas.ts, ActionError codes)
    │
-lib/actions/* ── panels, candidates, members, users — authorization +
+lib/actions/* ── auth, panels, candidates, users — authorization +
    │             transactional position bookkeeping
    │
 lib/logic/candidates.ts ── pure transition rules (unit tested, no I/O)

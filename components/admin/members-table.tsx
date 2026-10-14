@@ -4,6 +4,7 @@ import { Search, Shield, Trash2, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useMemo, useState } from "react";
+import { RelativeTime } from "@/components/board/relative-time";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -11,7 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { deleteUser, setUserRole } from "@/lib/actions/users";
-import { cn, relativeTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 export type MemberRow = {
   id: string;
@@ -221,7 +222,7 @@ export function MembersTable({
                       {member.createdPanelCount}
                     </td>
                     <td className="hidden px-3 py-3 text-xs whitespace-nowrap text-ink-3 lg:table-cell">
-                      {relativeTime(member.createdAt)}
+                      <RelativeTime at={new Date(member.createdAt)} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1.5">
@@ -234,6 +235,7 @@ export function MembersTable({
                                 roleChange.isExecuting &&
                                 rolePendingId === member.id
                               }
+                              disabled={roleChange.isExecuting}
                               onClick={() => {
                                 setRolePendingId(member.id);
                                 roleChange.execute({
@@ -255,6 +257,7 @@ export function MembersTable({
                                 roleChange.isExecuting &&
                                 rolePendingId === member.id
                               }
+                              disabled={roleChange.isExecuting}
                               onClick={() => {
                                 setRolePendingId(member.id);
                                 roleChange.execute({
@@ -306,7 +309,7 @@ export function MembersTable({
         title={
           deleteTarget ? `Delete ${deleteTarget.rollNo}?` : "Delete member"
         }
-        description="This removes their account, panel memberships and anything they added to the queues. It cannot be undone."
+        description="This removes their account and memberships. Panels they created transfer to you; queue entries they added stay. It cannot be undone."
         confirmLabel="Delete member"
         loading={remove.isExecuting}
       />

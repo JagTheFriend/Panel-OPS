@@ -34,7 +34,7 @@ export function Skeleton({ className }: { className?: string }) {
   );
 }
 
-/** Live pulse dot used for the auto-refreshing board indicator. */
+/** Live pulse dot used on the board's Live badge. */
 export function LiveDot({ className }: { className?: string }) {
   return (
     <span className={cn("relative flex size-2", className)}>

@@ -45,6 +45,9 @@ async function main() {
     where: {
       name: { notIn: domains.map((data) => data.name) },
       isActive: true,
+      // Only retire panels this seed created — never panels admins made in
+      // the control room.
+      createdById: admin.id,
     },
     data: { isActive: false },
   });

@@ -51,7 +51,15 @@ export const deleteUser = adminClient
       throw new ActionError("NOT_FOUND", "Member not found.");
     }
 
-    await prisma.user.delete({ where: { id: user.id } });
+    await prisma.$transaction(async (tx) => {
+      // Hand their panels to the acting admin — deleting the creator must
+      // never take the panels (and every candidate on them) down too.
+      await tx.panel.updateMany({
+        where: { createdById: user.id },
+        data: { createdById: ctx.user.id },
+      });
+      await tx.user.delete({ where: { id: user.id } });
+    });
 
     trackDomainEvent(ctx.user, "member deleted", {
       member_roll: user.rollNo,

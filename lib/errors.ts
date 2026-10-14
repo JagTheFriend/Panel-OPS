@@ -3,7 +3,8 @@ export type ActionErrorCode =
   | "UNAUTHENTICATED"
   | "FORBIDDEN"
   | "NOT_FOUND"
-  | "CONFLICT";
+  | "CONFLICT"
+  | "RATE_LIMITED";
 
 export type AppServerError = {
   code: ActionErrorCode;
@@ -22,4 +23,13 @@ export class ActionError extends Error {
     this.name = "ActionError";
     this.code = code;
   }
+}
+
+/** True for Prisma unique-constraint violations (P2002). */
+export function isUniqueViolation(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2002"
+  );
 }

@@ -17,7 +17,10 @@ export const joinRoomSchema = z.object({
   rollNo: rollNoSchema,
   pin: pinSchema,
   name: z.string().trim().min(1, "Name is required").max(60),
-  panelIds: z.array(z.string()).max(25),
+  panelIds: z
+    .array(z.string())
+    .max(25)
+    .refine((ids) => new Set(ids).size === ids.length, "Duplicate domains"),
 });
 
 export const createPanelSchema = z.object({
@@ -56,12 +59,16 @@ export const addCandidateSchema = z.object({
 export const candidateStatusSchema = z.object({
   id: z.string().min(1),
   status: z.enum(["WAITING", "IN_INTERVIEW", "DONE"]),
-  index: z.coerce.number().int().min(0).max(500).optional(),
+  index: z.coerce.number().int().min(0).max(10_000).optional(),
 });
 
 export const reorderCandidatesSchema = z.object({
   panelId: z.string().min(1),
-  orderedIds: z.array(z.string().min(1)).min(1).max(500),
+  orderedIds: z
+    .array(z.string().min(1))
+    .min(1)
+    .max(10_000)
+    .refine((ids) => new Set(ids).size === ids.length, "Duplicate ids"),
 });
 
 export const updateCandidateSchema = z.object({

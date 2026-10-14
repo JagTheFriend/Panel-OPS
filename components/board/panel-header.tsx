@@ -61,7 +61,9 @@ export function PanelHeader({
               Manage
             </Link>
           ) : null}
-          <LeavePanelButton panelId={panel.id} memberCount={members.length} />
+          {!isAdmin ? (
+            <LeavePanelButton panelId={panel.id} memberCount={members.length} />
+          ) : null}
         </div>
       </div>
 

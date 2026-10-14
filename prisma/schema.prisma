@@ -42,9 +42,11 @@ model Panel {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy   User              @relation("PanelCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy   User              @relation("PanelCreator", fields: [createdById], references: [id], onDelete: Restrict)
   members     PanelMembership[]
   candidates  Candidate[]
+
+  @@index([createdById])
 }
 
 /// A user joined to a panel (staffing it). Admin auto-joins panels they create.
@@ -80,4 +82,5 @@ model Candidate {
 
   @@unique([panelId, rollNo])
   @@index([panelId, status, position])
+  @@index([addedById])
 }

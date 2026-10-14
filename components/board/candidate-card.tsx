@@ -71,6 +71,7 @@ export function CandidateCard({
   };
 
   const saveName = async () => {
+    if (savingName) return;
     const trimmed = draftName.trim();
     if (!trimmed) {
       setNameError("Name cannot be empty.");
@@ -84,7 +85,7 @@ export function CandidateCard({
   };
 
   const removeCandidate = async () => {
-    if (!onRemove) return;
+    if (removing || !onRemove) return;
     setRemoving(true);
     const removed = await onRemove(candidate);
     setRemoving(false);

@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
 import type { ControlPanel } from "@/components/admin/panels-table";
+import { RelativeTime } from "@/components/board/relative-time";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { removePanelMember } from "@/lib/actions/panels";
-import { relativeTime } from "@/lib/utils";
 
 type PanelMember = ControlPanel["members"][number];
 
@@ -76,7 +76,7 @@ export function PanelMembers({ panel }: { panel: ControlPanel }) {
                 {member.role}
               </Badge>
               <span className="text-xs text-ink-3">
-                Joined {relativeTime(member.joinedAt)}
+                Joined <RelativeTime at={new Date(member.joinedAt)} />
               </span>
               <Button
                 variant="ghost"

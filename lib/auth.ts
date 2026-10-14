@@ -65,24 +65,16 @@ export async function requireAdmin(): Promise<CurrentUser> {
 }
 
 /** Admins can manage any panel; users only panels they joined. */
-export async function canManagePanel(
-  user: CurrentUser,
-  panelId: string,
-): Promise<boolean> {
+export function canManagePanel(user: CurrentUser, panelId: string): boolean {
   if (user.role === "ADMIN") return true;
-  if (user.panelIds.includes(panelId)) return true;
-  const membership = await prisma.panelMembership.findUnique({
-    where: { panelId_userId: { panelId, userId: user.id } },
-    select: { id: true },
-  });
-  return membership !== null;
+  return user.panelIds.includes(panelId);
 }
 
 export async function assertPanelAccess(
   user: CurrentUser,
   panelId: string,
 ): Promise<void> {
-  if (!(await canManagePanel(user, panelId))) {
+  if (!canManagePanel(user, panelId)) {
     throw new ActionError(
       "FORBIDDEN",
       "You must join this panel before managing it.",

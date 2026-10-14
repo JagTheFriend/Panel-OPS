@@ -1,4 +1,4 @@
-import { ArrowUpRight, DoorOpen, Users } from "lucide-react";
+import { ArrowUpRight, DoorOpen } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/empty-state";
@@ -7,7 +7,6 @@ export type BoardPanel = {
   id: string;
   name: string;
   description: string | null;
-  memberCount: number;
   joined: boolean;
   waiting: number;
   interviewing: number;
@@ -40,20 +39,14 @@ export function PanelCard({ panel }: { panel: BoardPanel }) {
         </Link>
       </div>
 
-      <div className="mt-auto flex items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Badge tone="warning" dot>
-            {panel.waiting} waiting
-          </Badge>
-          <Badge tone="live" dot>
-            {panel.interviewing} live
-          </Badge>
-          <Badge tone="brand">{panel.done} done</Badge>
-        </div>
-        <span className="inline-flex items-center gap-1 text-xs text-ink-3">
-          <Users className="size-3.5" />
-          {panel.memberCount}
-        </span>
+      <div className="mt-auto flex flex-wrap items-center gap-1.5">
+        <Badge tone="warning" dot>
+          {panel.waiting} waiting
+        </Badge>
+        <Badge tone="live" dot>
+          {panel.interviewing} live
+        </Badge>
+        <Badge tone="brand">{panel.done} done</Badge>
       </div>
 
       <Link

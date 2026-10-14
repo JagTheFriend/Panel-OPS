@@ -3,7 +3,7 @@
 import { trackDomainEvent } from "@/lib/analytics/posthog-server";
 import { assertPanelAccess } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ActionError } from "@/lib/errors";
+import { ActionError, isUniqueViolation } from "@/lib/errors";
 import {
   applyStatusTransition,
   type CandidateStatus,
@@ -51,16 +51,24 @@ export const addCandidate = adminClient
       select: { position: true },
     });
 
-    const candidate = await prisma.candidate.create({
-      data: {
-        panelId,
-        rollNo,
-        name: name || null,
-        status: "WAITING",
-        position: (last?.position ?? -1) + 1,
-        addedById: ctx.user.id,
-      },
-    });
+    const candidate = await prisma.candidate
+      .create({
+        data: {
+          panelId,
+          rollNo,
+          name: name || null,
+          status: "WAITING",
+          position: (last?.position ?? -1) + 1,
+          addedById: ctx.user.id,
+        },
+      })
+      .catch((error: unknown) => {
+        if (!isUniqueViolation(error)) throw error;
+        throw new ActionError(
+          "CONFLICT",
+          `${rollNo} is already in this panel's queue.`,
+        );
+      });
 
     trackDomainEvent(ctx.user, "candidate added", {
       panel_id: panelId,
@@ -73,76 +81,100 @@ export const addCandidate = adminClient
 
 /**
  * Moves a candidate between columns (with optional insert index) and keeps
- * kanban ordering consistent in one transaction.
+ * kanban ordering consistent in one transaction. The panel's candidates are
+ * locked FOR UPDATE first so concurrent drags serialise instead of writing
+ * stale ordering, and only rows whose position actually changes are updated.
  */
 async function moveCandidate(
   candidateId: string,
   toStatus: CandidateStatus,
   index?: number,
 ) {
-  const candidate = await prisma.candidate.findUnique({
-    where: { id: candidateId },
-  });
-  if (!candidate) {
-    throw new ActionError("NOT_FOUND", "Candidate not found.");
-  }
+  return prisma.$transaction(
+    async (tx) => {
+      const rows = await tx.$queryRaw<
+        {
+          id: string;
+          status: CandidateStatus;
+          position: number;
+          joinedAt: Date;
+          startedAt: Date | null;
+          completedAt: Date | null;
+        }[]
+      >`
+        SELECT c.id, c.status, c.position, c."joinedAt", c."startedAt", c."completedAt"
+        FROM "Candidate" c
+        WHERE c."panelId" = (
+          SELECT p."panelId" FROM "Candidate" p WHERE p.id = ${candidateId}
+        )
+        FOR UPDATE
+      `;
 
-  const fromStatus = candidate.status;
-  const all = await prisma.candidate.findMany({
-    where: { panelId: candidate.panelId },
-  });
+      const candidate = rows.find((row) => row.id === candidateId);
+      if (!candidate) {
+        throw new ActionError("NOT_FOUND", "Candidate not found.");
+      }
 
-  const transition = applyStatusTransition(candidate, toStatus);
-  if (!transition.ok) {
-    throw new ActionError("CONFLICT", transition.error);
-  }
+      const fromStatus = candidate.status;
+      const transition = applyStatusTransition(candidate, toStatus);
+      if (!transition.ok) {
+        throw new ActionError("CONFLICT", transition.error);
+      }
 
-  const columnIds = (status: CandidateStatus) =>
-    all
-      .filter((c) => c.status === status && c.id !== candidate.id)
-      .sort(
-        (a, b) =>
-          a.position - b.position ||
-          a.joinedAt.getTime() - b.joinedAt.getTime(),
-      )
-      .map((c) => c.id);
+      const columnIds = (status: CandidateStatus) =>
+        rows
+          .filter((row) => row.status === status && row.id !== candidate.id)
+          .sort(
+            (a, b) =>
+              a.position - b.position ||
+              a.joinedAt.getTime() - b.joinedAt.getTime(),
+          )
+          .map((row) => row.id);
 
-  const fromIds = columnIds(fromStatus);
-  const toIds = columnIds(toStatus);
-  const insertAt = Math.max(0, Math.min(index ?? toIds.length, toIds.length));
-  const finalTo = [
-    ...toIds.slice(0, insertAt),
-    candidate.id,
-    ...toIds.slice(insertAt),
-  ];
+      const fromIds = columnIds(fromStatus);
+      const toIds = columnIds(toStatus);
+      const insertAt = Math.max(
+        0,
+        Math.min(index ?? toIds.length, toIds.length),
+      );
+      const finalTo = [
+        ...toIds.slice(0, insertAt),
+        candidate.id,
+        ...toIds.slice(insertAt),
+      ];
 
-  const operations = [
-    prisma.candidate.update({
-      where: { id: candidate.id },
-      data: { ...transition.value, position: insertAt },
-    }),
-  ];
+      const positions = new Map(rows.map((row) => [row.id, row.position]));
 
-  if (fromStatus !== toStatus) {
-    operations.push(
-      ...fromIds.map((id, i) =>
-        prisma.candidate.update({ where: { id }, data: { position: i } }),
-      ),
-    );
-  }
+      await tx.candidate.update({
+        where: { id: candidate.id },
+        data: {
+          status: transition.value.status,
+          startedAt: transition.value.startedAt,
+          completedAt: transition.value.completedAt,
+          position: insertAt,
+        },
+      });
 
-  operations.push(
-    ...finalTo
-      .map((id, i) => ({ id, i }))
-      .filter(({ id }) => id !== candidate.id)
-      .map(({ id, i }) =>
-        prisma.candidate.update({ where: { id }, data: { position: i } }),
-      ),
+      const renumber = async (ids: string[]) => {
+        for (const [i, id] of ids.entries()) {
+          if (positions.get(id) === i) continue;
+          await tx.candidate.update({ where: { id }, data: { position: i } });
+        }
+      };
+
+      if (fromStatus !== toStatus) {
+        await renumber(fromIds);
+      }
+      await renumber(finalTo.filter((id) => id !== candidate.id));
+
+      return {
+        candidate: { ...candidate, ...transition.value },
+        toStatus,
+        fromStatus,
+      };
+    },
+    { timeout: 10_000 },
   );
-
-  await prisma.$transaction(operations);
-
-  return { candidate, toStatus, fromStatus };
 }
 
 export const setCandidateStatus = authedClient
@@ -199,9 +231,12 @@ export const reorderCandidates = authedClient
 
     const candidates = await prisma.candidate.findMany({
       where: { panelId, id: { in: orderedIds } },
-      select: { id: true },
+      select: { id: true, status: true },
     });
-    if (candidates.length !== new Set(orderedIds).size) {
+    if (
+      candidates.length !== orderedIds.length ||
+      new Set(candidates.map((c) => c.status)).size !== 1
+    ) {
       throw new ActionError("CONFLICT", "Queue changed — please refresh.");
     }
 

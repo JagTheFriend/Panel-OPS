@@ -14,7 +14,7 @@ async function ProtectedShell({ children }: { children: ReactNode }) {
   await connection();
 
   const user = await getCurrentUser();
-  if (!user) redirect("/join");
+  if (!user) redirect("/api/session/clear");
 
   return (
     <>

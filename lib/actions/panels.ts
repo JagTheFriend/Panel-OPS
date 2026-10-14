@@ -2,9 +2,8 @@
 
 import { returnValidationErrors } from "next-safe-action";
 import { trackDomainEvent } from "@/lib/analytics/posthog-server";
-import { assertPanelAccess } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ActionError } from "@/lib/errors";
+import { ActionError, isUniqueViolation } from "@/lib/errors";
 import { adminClient, authedClient } from "@/lib/safe-action";
 import {
   createPanelSchema,
@@ -25,18 +24,27 @@ export const createPanel = adminClient
       });
     }
 
-    const panel = await prisma.panel.create({
-      data: {
-        name,
-        description: description || null,
-        createdById: ctx.user.id,
-      },
-    });
-
-    // Admins automatically join the panels they create.
-    await prisma.panelMembership.create({
-      data: { panelId: panel.id, userId: ctx.user.id },
-    });
+    const panel = await prisma
+      .$transaction(async (tx) => {
+        const created = await tx.panel.create({
+          data: {
+            name,
+            description: description || null,
+            createdById: ctx.user.id,
+          },
+        });
+        // Admins automatically join the panels they create.
+        await tx.panelMembership.create({
+          data: { panelId: created.id, userId: ctx.user.id },
+        });
+        return created;
+      })
+      .catch((error: unknown) => {
+        if (!isUniqueViolation(error)) throw error;
+        returnValidationErrors(createPanelSchema, {
+          name: { _errors: ["A panel for this domain already exists."] },
+        });
+      });
 
     trackDomainEvent(ctx.user, "panel created", {
       panel_id: panel.id,
@@ -129,8 +137,8 @@ export const joinPanel = authedClient
 export const leavePanel = authedClient
   .inputSchema(panelIdSchema)
   .action(async ({ parsedInput, ctx }) => {
-    await assertPanelAccess(ctx.user, parsedInput.panelId);
-
+    // Scoped to the caller's own membership row, so leaving is idempotent and
+    // safe for admins (leaving never removes anybody else).
     await prisma.panelMembership.deleteMany({
       where: { panelId: parsedInput.panelId, userId: ctx.user.id },
     });

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Loader2, Lock } from "lucide-react";
+import { ArrowRight, Lock } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ export function JoinForm({ panels }: { panels: JoinPanelOption[] }) {
       className="space-y-4"
       onSubmit={(event) => {
         event.preventDefault();
+        if (isExecuting) return;
         const form = new FormData(event.currentTarget);
         execute({
           rollNo: String(form.get("rollNo") ?? "").trim(),
@@ -58,6 +59,7 @@ export function JoinForm({ panels }: { panels: JoinPanelOption[] }) {
             autoCapitalize="none"
             inputMode="numeric"
             pattern="[0-9]*"
+            maxLength={20}
             spellCheck={false}
             required
             autoFocus
@@ -184,9 +186,7 @@ export function JoinForm({ panels }: { panels: JoinPanelOption[] }) {
         disabled={isExecuting || domainsMissing}
       >
         {isExecuting ? (
-          <>
-            <Loader2 className="size-4 animate-spin" /> Joining…
-          </>
+          "Joining…"
         ) : (
           <>
             Enter the room

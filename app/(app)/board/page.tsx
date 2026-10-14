@@ -22,7 +22,7 @@ const tiles = [
 export default async function BoardPage() {
   await connection();
   const user = await getCurrentUser();
-  if (!user) redirect("/join");
+  if (!user) redirect("/api/session/clear");
 
   const panels = await getBoardOverview(user.id, user.role === "ADMIN");
 
@@ -95,7 +95,7 @@ export default async function BoardPage() {
 
       <p className="flex items-center gap-2 pt-2 text-xs text-ink-3">
         <RadioTower className="size-3.5" />
-        Updates land as soon as somebody acts — no refresh needed.
+        Your changes save instantly — reload to pick up other panelists’ moves.
       </p>
     </div>
   );

@@ -21,7 +21,7 @@ const tiles = [
 export default async function AdminPanelsPage() {
   await connection();
   const user = await getCurrentUser();
-  if (!user) redirect("/join");
+  if (!user) redirect("/api/session/clear");
   if (user.role !== "ADMIN") redirect("/board");
 
   const panels = await getAdminPanels();

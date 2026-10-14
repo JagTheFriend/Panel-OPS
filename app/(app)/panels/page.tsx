@@ -10,7 +10,7 @@ export const instant = false;
 export default async function PanelsPage() {
   await connection();
   const user = await getCurrentUser();
-  if (!user) redirect("/join");
+  if (!user) redirect("/api/session/clear");
 
   const panels = await getDirectoryPanels(user.id, user.role === "ADMIN");
 

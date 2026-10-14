@@ -149,7 +149,12 @@ export function CreatePanelModal({
           <Button variant="secondary" onClick={onClose} disabled={isExecuting}>
             Cancel
           </Button>
-          <Button type="submit" form="create-panel-form" loading={isExecuting}>
+          <Button
+            type="submit"
+            form="create-panel-form"
+            loading={isExecuting}
+            disabled={isExecuting}
+          >
             Create panel
           </Button>
         </>
@@ -160,6 +165,7 @@ export function CreatePanelModal({
         className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
+          if (isExecuting) return;
           const form = new FormData(event.currentTarget);
           execute({
             name: String(form.get("name") ?? ""),
@@ -254,7 +260,7 @@ export function EditPanelModal({
         className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
-          if (!panel) return;
+          if (isExecuting || !panel) return;
           const form = new FormData(event.currentTarget);
           execute({
             id: panel.id,
