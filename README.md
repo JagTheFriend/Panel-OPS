@@ -26,12 +26,17 @@ next-safe-action, PostHog and Vercel Analytics.
 - **Members** (`/admin/members`, admin only) — promote/demote/delete users (self-demotion
   and self-deletion are blocked server-side).
 - **Toasts, modals, confirm dialogs** and a consistent design-token UI kit.
-- **Mobile-friendly** — verified with real-browser audits from 320px up: icon-only nav
-  on phones, edge-to-edge swipeable kanban columns, admin tables that surface priority
-  columns and actions first, and 44px touch targets on every interactive control.
+- **Responsive 320px → 1920px** — verified with real-browser screenshot audits at
+  every breakpoint (phone, tablet, laptop, wide desktop) plus modal/dialog states:
+  icon-only nav on phones, edge-to-edge swipeable kanban columns, admin tables that
+  scroll inside their card and surface priority columns and actions first, and 44px
+  touch targets on every interactive control.
 - **Analytics** — PostHog heatmaps + autocapture (proxied through `/ingest` so no
   third-party cookies), PostHog **frequency** page views, server-side domain events
   captured out-of-band with `after()`, plus Vercel Analytics and Speed Insights.
+- **SEO** — per-page titles/descriptions, canonical URLs, Open Graph + Twitter
+  `summary_large_image` (generated 1200×630 PNG), `WebApplication` JSON-LD,
+  `robots.txt` + `sitemap.xml`, and `noindex` on every authenticated route.
 
 ## Tech stack
 
@@ -157,6 +162,7 @@ See [`.env.example`](.env.example):
 | `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | pooled (app) + direct (migrations) Neon/local strings |
 | `SESSION_SECRET` | iron-session seal key, ≥ 32 chars (`openssl rand -hex 32`) |
 | `ROOM_PIN` / `ADMIN_PIN` | fallback participant PIN (domain.json wins) / admin upgrade PIN |
+| `NEXT_PUBLIC_APP_URL` | public origin for canonical/OG/sitemap/robots URLs (defaults to `http://localhost:3100`) |
 | `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` / `_KEY` / `_HOST` / `_UI_HOST` | PostHog project key (either name works) + API/UI hosts (empty = no-op) |
 
 ## Deploying (Vercel + Neon)
@@ -164,8 +170,10 @@ See [`.env.example`](.env.example):
 1. Create a Neon project; use the **pooled** connection string for `DATABASE_URL` and the
    **direct** string for `DATABASE_URL_UNPOOLED`.
 2. Push the repo to GitHub and import it in Vercel. Set the env vars above (plus
-   `ROOM_PIN`/`ADMIN_PIN` — change them from the local defaults). The `vercel-build`
-   script runs `prisma generate && prisma migrate deploy && next build`.
+   `ROOM_PIN`/`ADMIN_PIN` — change them from the local defaults, and
+   `NEXT_PUBLIC_APP_URL` to the production domain so canonical/OG/sitemap URLs are
+   absolute). The `vercel-build` script runs
+   `prisma generate && prisma migrate deploy && next build`.
 3. Enable Web Analytics and Speed Insights in the Vercel dashboard (no env needed).
 4. Set `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` (and host, if not using the US cloud) if you
    want heatmaps + frequency analytics; the browser SDK reports through the `/ingest`
@@ -175,16 +183,19 @@ See [`.env.example`](.env.example):
 
 ```
 app/
-  page.tsx                 landing (static)
+  page.tsx                 landing (static, WebApplication JSON-LD)
   join/                    roll + PIN entry (PPR)
+  robots.ts sitemap.ts     crawl rules + sitemap (from NEXT_PUBLIC_APP_URL)
+  opengraph-image.tsx      generated OG/Twitter card image (1200×630)
   (app)/board/             panel overview + [panelId] kanban
   (app)/panels/            directory
-  (app)/admin/             control room + members (admin-gated)
+  (app)/admin/             control room + members (admin-gated, noindex)
 lib/
   actions/                 server actions (next-safe-action)
   logic/                   pure domain rules (unit tested)
   data/queries.ts          all reads
   auth.ts, session.ts      session/authorization helpers
+  site.ts                  site-wide URL/name constants
 components/
   board/ panels/ admin/    feature UI
   ui/                      design system primitives
