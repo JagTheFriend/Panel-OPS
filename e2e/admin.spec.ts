@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
 import {
-  ADMIN_PIN,
-  ADMIN_ROLL,
-  createRoomUser,
-  joinRoom,
+  ADMIN_EMAIL,
+  ADMIN_SESSION,
+  MEMBER_EMAIL,
+  MEMBER_SESSION,
+  openRoom,
   uniqueToken,
 } from "./helpers";
 
@@ -15,8 +16,8 @@ test.describe("control room", () => {
     const description = uniqueToken("Desc ");
     const editedDescription = uniqueToken("Edited ");
 
-    await joinRoom(page, ADMIN_ROLL, ADMIN_PIN);
-    await page.goto("/admin/panels");
+    const roomId = await openRoom(page, ADMIN_SESSION);
+    await page.goto(`/rooms/${roomId}/admin/panels`);
     await expect(
       page.getByRole("heading", { name: "Control room", exact: true }),
     ).toBeVisible();
@@ -58,10 +59,12 @@ test.describe("control room", () => {
     await expect(page.getByText("Creator", { exact: true })).toBeVisible();
 
     await page
-      .getByRole("button", { name: `Remove ${ADMIN_ROLL} from ${panelName}` })
+      .getByRole("button", {
+        name: `Remove Admin Coordinator from ${panelName}`,
+      })
       .click();
     const removeDialog = page.getByRole("dialog", {
-      name: `Remove ${ADMIN_ROLL}?`,
+      name: "Remove Admin Coordinator?",
     });
     await expect(removeDialog).toBeVisible();
     await removeDialog.getByRole("button", { name: "Remove member" }).click();
@@ -86,13 +89,13 @@ test.describe("control room", () => {
   test("members table toggles roles and hides self-row actions", async ({
     page,
   }) => {
-    await joinRoom(page, ADMIN_ROLL, ADMIN_PIN);
-    await page.goto("/admin/members");
+    const roomId = await openRoom(page, ADMIN_SESSION);
+    await page.goto(`/rooms/${roomId}/admin/members`);
     await expect(
       page.getByRole("heading", { name: "Members", level: 1, exact: true }),
     ).toBeVisible();
 
-    const selfRow = page.getByRole("row").filter({ hasText: ADMIN_ROLL });
+    const selfRow = page.getByRole("row").filter({ hasText: ADMIN_EMAIL });
     await expect(selfRow).toBeVisible();
     await expect(selfRow.getByText("You", { exact: true })).toBeVisible();
     await expect(
@@ -102,11 +105,11 @@ test.describe("control room", () => {
       selfRow.getByRole("button", { name: "Make member" }),
     ).toHaveCount(0);
     await expect(
-      selfRow.getByRole("button", { name: `Delete ${ADMIN_ROLL}` }),
+      selfRow.getByRole("button", { name: `Remove ${ADMIN_EMAIL}` }),
     ).toHaveCount(0);
 
-    await page.getByLabel("Search members").fill("9002");
-    const memberRow = page.getByRole("row").filter({ hasText: "9002" });
+    await page.getByLabel("Search members").fill(MEMBER_EMAIL);
+    const memberRow = page.getByRole("row").filter({ hasText: MEMBER_EMAIL });
     await expect(memberRow).toBeVisible();
 
     await memberRow.getByRole("button", { name: "Make admin" }).click();
@@ -120,13 +123,15 @@ test.describe("control room", () => {
     ).toBeVisible();
   });
 
-  test("a USER is redirected from /admin/* to /board", async ({ page }) => {
-    await createRoomUser(page);
+  test("a room USER is redirected from /admin/* to the board", async ({
+    page,
+  }) => {
+    const roomId = await openRoom(page, MEMBER_SESSION);
 
-    await page.goto("/admin/panels");
-    await expect(page).toHaveURL(/\/board$/);
+    await page.goto(`/rooms/${roomId}/admin/panels`);
+    await expect(page).toHaveURL(/\/rooms\/[^/]+\/board$/);
 
-    await page.goto("/admin/members");
-    await expect(page).toHaveURL(/\/board$/);
+    await page.goto(`/rooms/${roomId}/admin/members`);
+    await expect(page).toHaveURL(/\/rooms\/[^/]+\/board$/);
   });
 });

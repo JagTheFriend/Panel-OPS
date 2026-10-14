@@ -1,13 +1,32 @@
+import "dotenv/config";
 import { expect, type Locator, type Page } from "@playwright/test";
+import { signedSessionCookie } from "../prisma/session-cookie";
 
-export const ADMIN_ROLL = "9001";
+export const E2E_ORIGIN = "http://localhost:3110";
+export const SESSION_COOKIE = "better-auth.session_token";
+
+/** Session tokens seeded by prisma/seed.ts (dev + e2e log in via the DB). */
+export const ADMIN_SESSION = "dev-session-admin";
+export const MEMBER_SESSION = "dev-session-member";
+export const OUTSIDER_SESSION = "dev-session-outsider";
+/** Disposable admin session — sign-out deletes it, so shared tokens stay valid. */
+export const SIGNOUT_SESSION = "dev-session-signout";
+
+/** Demo room seeded by prisma/seed.ts. */
+export const ROOM_NAME = "Demo Room";
+export const ROOM_CODE = "DEMO42";
 export const ADMIN_PIN = "7331";
-export const ROOM_PIN = "1234";
+export const NORMAL_PIN = "1234";
+
+export const ADMIN_EMAIL = "admin@panelops.dev";
+export const MEMBER_EMAIL = "member@panelops.dev";
 
 /** Seeded panel that always has candidates in every column. */
 export const SEEDED_PANEL = "Web Development";
-/** Seeded panel used for admin join/leave round trips (seed joins the admin). */
+/** Seeded panel used for join/leave round trips (seed joins the admin). */
 export const DIRECTORY_PANEL = "DevOps & Cloud";
+/** Panels the seeded member has joined (their board shows only these). */
+export const MEMBER_BOARDS = ["Web Development", "Data Science"];
 
 let sequence = 0;
 
@@ -19,51 +38,38 @@ export function uniqueToken(prefix: string): string {
   return `${prefix}${Date.now().toString(36)}${sequence.toString(36)}`;
 }
 
-/** Collision-free numeric roll (roll numbers are digits only). */
-export function uniqueRoll(): string {
-  sequence += 1;
-  return `${Date.now()}${sequence}`;
+/** Plants the seeded better-auth session cookie for this browser context. */
+export async function signIn(page: Page, sessionToken: string): Promise<void> {
+  await page.context().addCookies([
+    {
+      name: SESSION_COOKIE,
+      value: signedSessionCookie(sessionToken),
+      url: E2E_ORIGIN,
+    },
+  ]);
 }
 
-/** Fills the join form and waits until the session lands on /board. */
-export async function joinRoom(
+/** Signs in and opens the room's board; returns the room id. */
+export async function openRoom(
   page: Page,
-  rollNo: string,
-  pin: string,
-  name?: string,
-): Promise<void> {
-  await page.goto("/join");
-  await page.getByLabel("Roll number", { exact: true }).fill(rollNo);
-  await page
-    .getByLabel("Name", { exact: true })
-    .fill(name ?? uniqueToken("User "));
-  await page.getByLabel("Room PIN", { exact: true }).fill(pin);
-  const firstDomain = page.locator('input[type="checkbox"]').first();
-  if (await firstDomain.count()) {
-    await firstDomain.check();
-  }
-  await page.getByRole("button", { name: "Enter the room" }).click();
-  await expect(page).toHaveURL(/\/board$/);
-}
-
-export async function loginAsAdmin(page: Page): Promise<void> {
-  await joinRoom(page, ADMIN_ROLL, ADMIN_PIN);
-}
-
-/** Creates a brand-new USER via the room PIN and returns its roll number. */
-export async function createRoomUser(page: Page): Promise<string> {
-  const rollNo = uniqueRoll();
-  await joinRoom(page, rollNo, ROOM_PIN, uniqueToken("User "));
-  return rollNo;
+  sessionToken: string,
+  roomName: string = ROOM_NAME,
+): Promise<string> {
+  await signIn(page, sessionToken);
+  await page.goto("/rooms");
+  await page.getByRole("heading", { name: roomName, level: 2 }).click();
+  await expect(page).toHaveURL(/\/rooms\/[^/]+\/board$/);
+  return new URL(page.url()).pathname.split("/")[2];
 }
 
 export async function openPanelBoard(
   page: Page,
+  roomId: string,
   panelName: string,
 ): Promise<void> {
-  await page.goto("/board");
+  await page.goto(`/rooms/${roomId}/board`);
   // The card's overlay link covers the labelled arrow link, so the click is
-  // forced — both point at the same /board/[panelId] route.
+  // forced — both point at the same board route.
   await page
     .getByRole("link", { name: `Open ${panelName} board` })
     .click({ force: true });

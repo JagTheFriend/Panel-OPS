@@ -1,73 +1,94 @@
 import { expect, test } from "@playwright/test";
 import {
-  ADMIN_PIN,
-  ADMIN_ROLL,
-  createRoomUser,
-  joinRoom,
-  uniqueRoll,
+  ADMIN_SESSION,
+  E2E_ORIGIN,
+  MEMBER_SESSION,
+  ROOM_NAME,
+  SESSION_COOKIE,
+  SIGNOUT_SESSION,
+  signIn,
 } from "./helpers";
 
 test.describe("authentication", () => {
-  test("anonymous /board is redirected to /join", async ({ page }) => {
-    await page.goto("/board");
+  test("anonymous /rooms is redirected to /join", async ({ page }) => {
+    await page.goto("/rooms");
 
     await expect(page).toHaveURL(/\/join$/);
-    await expect(page.getByLabel("Roll number", { exact: true })).toBeVisible();
-    await expect(page.getByLabel("Room PIN", { exact: true })).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Enter the room" }),
+      page.getByRole("heading", { name: "Welcome back", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Continue with Google" }),
     ).toBeVisible();
   });
 
-  test("an incorrect PIN shows an error", async ({ page }) => {
-    await page.goto("/join");
-    await page.getByLabel("Roll number", { exact: true }).fill(uniqueRoll());
-    await page.getByLabel("Name", { exact: true }).fill("Wrong Pin User");
-    await page.locator('input[type="checkbox"]').first().check();
-    await page.getByLabel("Room PIN", { exact: true }).fill("0000");
-    await page.getByRole("button", { name: "Enter the room" }).click();
-
-    await expect(
-      page.getByRole("alert").filter({ hasText: "Incorrect PIN" }),
-    ).toBeVisible();
-    await expect(page).toHaveURL(/\/join$/);
-    await expect(page.getByLabel("Roll number", { exact: true })).toBeVisible();
-  });
-
-  test("admin login lands on /board and logout returns to /join", async ({
+  test("a Google sign-in failure surfaces an error on the page", async ({
     page,
   }) => {
-    await joinRoom(page, ADMIN_ROLL, ADMIN_PIN);
+    await page.goto("/join");
+    await page.getByRole("button", { name: "Continue with Google" }).click();
 
-    await expect(page).toHaveURL(/\/board$/);
-    const header = page.getByRole("banner");
-    await expect(header).toBeVisible();
-    await expect(header.getByText(ADMIN_ROLL, { exact: true })).toBeVisible();
-    await expect(header.getByText("ADMIN", { exact: true })).toBeVisible();
+    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(page).toHaveURL(/\/join$/);
+  });
+
+  test("a signed-in user is redirected from /join to /rooms", async ({
+    page,
+  }) => {
+    await signIn(page, MEMBER_SESSION);
+    await page.goto("/join");
+
+    await expect(page).toHaveURL(/\/rooms$/);
     await expect(
-      page.getByRole("heading", { name: "Live board", exact: true }),
+      page.getByRole("heading", { name: ROOM_NAME, level: 2 }),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: "Members" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Control" })).toBeVisible();
+  });
+
+  test("a seeded session lands on the hub with the demo room", async ({
+    page,
+  }) => {
+    await signIn(page, ADMIN_SESSION);
+    await page.goto("/rooms");
+
+    const card = page.getByRole("link", { name: new RegExp(ROOM_NAME) });
+    await expect(card).toBeVisible();
+    await expect(card.getByText("ADMIN", { exact: true })).toBeVisible();
+    await expect(card.getByText(/4 panels/)).toBeVisible();
+  });
+
+  test("a stale session cookie is cleared instead of looping", async ({
+    page,
+  }) => {
+    await page.context().addCookies([
+      {
+        name: SESSION_COOKIE,
+        value: "not-a-real-session",
+        url: E2E_ORIGIN,
+      },
+    ]);
+
+    await page.goto("/rooms");
+    await expect(page).toHaveURL(/\/join$/);
+
+    const cookies = await page.context().cookies();
+    expect(
+      cookies.find((cookie) => cookie.name === SESSION_COOKIE),
+    ).toBeUndefined();
+  });
+
+  test("sign out clears the session and returns to /join", async ({ page }) => {
+    await signIn(page, SIGNOUT_SESSION);
+    await page.goto("/rooms");
+    await expect(
+      page.getByRole("heading", { name: ROOM_NAME, level: 2 }),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: "Sign out" }).click();
     await expect(page).toHaveURL(/\/join$/);
 
-    await page.goto("/board");
-    await expect(page).toHaveURL(/\/join$/);
-  });
-
-  test("room PIN grants a non-admin USER session", async ({ page }) => {
-    const rollNo = await createRoomUser(page);
-
-    await expect(page).toHaveURL(/\/board$/);
-    const header = page.getByRole("banner");
-    await expect(header.getByText(rollNo, { exact: true })).toBeVisible();
-    await expect(header.getByText("USER", { exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Members" })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Control" })).toHaveCount(0);
-    await expect(
-      page.getByRole("heading", { name: "Live board", exact: true }),
-    ).toBeVisible();
+    const cookies = await page.context().cookies();
+    expect(
+      cookies.find((cookie) => cookie.name === SESSION_COOKIE),
+    ).toBeUndefined();
   });
 });
