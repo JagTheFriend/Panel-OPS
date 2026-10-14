@@ -117,9 +117,6 @@ export function PanelHeader({
                   </span>
                 ) : null}
               </div>
-              <span className="text-xs text-ink-3">
-                {members.length} {members.length === 1 ? "member" : "members"}
-              </span>
             </div>
 
             <span className="hidden h-4 w-px bg-line sm:block" />
