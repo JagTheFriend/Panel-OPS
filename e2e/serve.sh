@@ -6,7 +6,7 @@
 #   3. serve it on port 3110
 #
 # Everything is pointed at 5434 via the environment, so the dev database on
-# 5433 (and the server already running on 3100) is never touched. The server
+# 5433 (and the server already running on 3000) is never touched. The server
 # still reads BETTER_AUTH_SECRET / BETTER_AUTH_URL / GOOGLE_* from .env.
 #
 # The reset is done as "drop schema + migrate deploy + db seed" rather than

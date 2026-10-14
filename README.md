@@ -75,7 +75,7 @@ npm run db:up                   # docker compose: dev DB :5433, test DB :5434
 npm run db:migrate              # apply migrations
 npm run db:seed                 # demo room + panels + fixed local session tokens
 
-npm run dev                     # http://localhost:3100
+npm run dev                     # http://localhost:3000
 ```
 
 ### Signing in locally
@@ -83,7 +83,7 @@ npm run dev                     # http://localhost:3100
 Real sign-in needs Google OAuth credentials (see
 [Environment variables](#environment-variables)). For local browsing without them, the
 seed installs fixed sessions — open devtools and set the cookie
-`better-auth.session_token` for `http://localhost:3100` to the **signed value printed
+`better-auth.session_token` for `http://localhost:3000` to the **signed value printed
 by `npm run db:seed`** (better-auth signs session cookies with `BETTER_AUTH_SECRET`;
 the raw token on its own is rejected):
 
@@ -110,7 +110,7 @@ The e2e suite plants the same signed cookies — no Google round-trip in tests.
 
 | Script | What it does |
 | ------ | ------------ |
-| `npm run dev` / `start` | Next dev/prod server on **port 3100** |
+| `npm run dev` / `start` | Next dev/prod server on **port 3000** (Next.js default) |
 | `npm run build` / `vercel-build` | build (Vercel adds `prisma migrate deploy`) |
 | `npm run lint` / `format` | Biome check / write |
 | `npm run typecheck` | `tsc --noEmit` |
@@ -136,7 +136,7 @@ The e2e suite plants the same signed cookies — no Google round-trip in tests.
   full kanban lifecycle (add → start → done → remove), directory join/leave/search,
   and control-room panel CRUD + role management. Sessions are planted as
   `better-auth.session_token` cookies, so no Google credentials are needed. It never
-  touches your dev server (:3100) or dev database (:5433).
+  touches your dev server (:3000) or dev database (:5433).
 
 ## How it fits together
 
@@ -187,9 +187,9 @@ See [`.env.example`](.env.example):
 | --- | ------- |
 | `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | app + direct (migrations) strings — Neon in prod, Docker locally |
 | `BETTER_AUTH_SECRET` | better-auth signing secret, ≥ 32 chars (`openssl rand -hex 32`) |
-| `BETTER_AUTH_URL` | base URL of the app (OAuth callbacks), e.g. `http://localhost:3100` |
+| `BETTER_AUTH_URL` | base URL of the app (OAuth callbacks), e.g. `http://localhost:3000` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth client (empty = sign-in button errors gracefully; use seeded sessions locally) |
-| `NEXT_PUBLIC_APP_URL` | public origin for canonical/OG/sitemap/robots URLs (defaults to `http://localhost:3100`) |
+| `NEXT_PUBLIC_APP_URL` | public origin for canonical/OG/sitemap/robots URLs (defaults to `http://localhost:3000`) |
 | `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` / `_KEY` / `_HOST` / `_UI_HOST` | PostHog project key (either name works) + API/UI hosts (empty = no-op) |
 
 ## Deploying (Vercel + Neon + Google)
@@ -199,7 +199,7 @@ See [`.env.example`](.env.example):
 2. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials), create
    an OAuth 2.0 Client (type: Web application) with authorized redirect URI
    `https://<your-domain>/api/auth/callback/google` (plus
-   `http://localhost:3100/api/auth/callback/google` for local). Copy the client id and
+   `http://localhost:3000/api/auth/callback/google` for local). Copy the client id and
    secret.
 3. Push the repo to GitHub and import it in Vercel. Set the env vars above —
    `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to the production origin,
