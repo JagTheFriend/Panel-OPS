@@ -1,11 +1,33 @@
 import { Radio } from "lucide-react";
+import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/spinner";
 import { prisma } from "@/lib/db";
+import { SITE_NAME } from "@/lib/site";
 import { JoinForm } from "./join-form";
 
-export const metadata = { title: "Join the room" };
+const joinDescription =
+  "Check in with your roll number and room PIN — no signup required. Pick your domains and track the interview queue live.";
+
+export const metadata: Metadata = {
+  title: "Join the room",
+  description: joinDescription,
+  alternates: { canonical: "/join" },
+  openGraph: {
+    title: "Join the room",
+    description: joinDescription,
+    url: "/join",
+    siteName: SITE_NAME,
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary",
+    title: "Join the room",
+    description: joinDescription,
+  },
+};
 
 async function JoinPanelSection() {
   // Panel list must be fresh at request time (people get added mid-event).

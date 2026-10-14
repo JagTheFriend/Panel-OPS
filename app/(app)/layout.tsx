@@ -1,9 +1,14 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { type ReactNode, Suspense } from "react";
 import { IdentityBridge } from "@/components/identity-bridge";
 import { Header } from "@/components/shell/header";
 import { getCurrentUser } from "@/lib/auth";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 /**
  * Authentication is optimistically enforced in `proxy.ts` (real HTTP redirects

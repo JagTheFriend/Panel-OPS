@@ -19,7 +19,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { panelId } = await params;
   const name = await getPanelName(panelId);
-  return { title: name ? `${name} · Panel board` : "Panel board" };
+  return {
+    title: name ? `${name} · Panel board` : "Panel board",
+    description: name
+      ? `${name} panel queue — follow candidates from waiting to in interview to done.`
+      : "Panel queue board for recruitment interviews.",
+  };
 }
 
 export default async function PanelBoardPage({
