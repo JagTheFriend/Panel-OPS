@@ -24,6 +24,9 @@ test.describe("rooms", () => {
     await expect(
       page.getByRole("heading", { name: "No active panels yet" }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Copy room code [A-Z0-9]+/ }),
+    ).toBeVisible();
 
     await page.goto(
       `/rooms/${new URL(page.url()).pathname.split("/")[2]}/admin/panels`,
@@ -56,7 +59,7 @@ test.describe("rooms", () => {
       page.getByRole("heading", { name: "You are not in any room yet" }),
     ).toBeVisible();
 
-    await page.getByLabel("Room code").fill(ROOM_CODE);
+    await page.getByLabel("Room code", { exact: true }).fill(ROOM_CODE);
     await page.getByLabel("PIN", { exact: true }).fill("0000");
     await page.getByRole("button", { name: "Join room" }).click();
     await expect(page.getByText("Incorrect PIN for this room.")).toBeVisible();
@@ -92,7 +95,7 @@ test.describe("rooms", () => {
     await signIn(page, OUTSIDER_SESSION);
     await page.goto("/rooms");
 
-    await page.getByLabel("Room code").fill(ROOM_CODE);
+    await page.getByLabel("Room code", { exact: true }).fill(ROOM_CODE);
     await page.getByLabel("PIN", { exact: true }).fill(NORMAL_PIN);
     await page.getByRole("button", { name: "Join room" }).click();
     await expect(page).toHaveURL(/\/rooms\/[^/]+\/board$/);
@@ -101,7 +104,7 @@ test.describe("rooms", () => {
     await page.getByRole("link", { name: /PanelOps/ }).click();
     await expect(page).toHaveURL(/\/rooms$/);
 
-    await page.getByLabel("Room code").fill(ROOM_CODE);
+    await page.getByLabel("Room code", { exact: true }).fill(ROOM_CODE);
     await page.getByLabel("PIN", { exact: true }).fill(ADMIN_PIN);
     await page.getByRole("button", { name: "Join room" }).click();
 
@@ -118,7 +121,7 @@ test.describe("rooms", () => {
     await signIn(page, MEMBER_SESSION);
     await page.goto("/rooms");
 
-    await page.getByLabel("Room code").fill("NOPE99");
+    await page.getByLabel("Room code", { exact: true }).fill("NOPE99");
     await page.getByLabel("PIN", { exact: true }).fill(NORMAL_PIN);
     await page.getByRole("button", { name: "Join room" }).click();
 

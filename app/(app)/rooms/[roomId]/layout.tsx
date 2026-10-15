@@ -26,6 +26,7 @@ async function RoomShell({
         room={{
           id: roomCtx.room.id,
           name: roomCtx.room.name,
+          code: roomCtx.room.code,
           role: roomCtx.role,
         }}
       />

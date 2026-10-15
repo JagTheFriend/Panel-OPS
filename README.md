@@ -33,6 +33,9 @@ sign-in), Prisma 7 + Neon, Tailwind v4, next-safe-action, PostHog and Vercel Ana
   panels.
 - **Members** (`/rooms/[roomId]/admin/members`, room admins) — promote/demote/remove
   room members (self-demotion and self-removal are blocked server-side).
+- **Never-frozen navigation** — every route transition shows a matching skeleton
+  (`loading.tsx`) and nav links dim while in flight; the room header keeps the room
+  code visible with one-click copy.
 - **Toasts, modals, confirm dialogs** and a consistent design-token UI kit.
 - **Responsive 320px → 1920px** — verified with real-browser screenshot audits at
   every breakpoint (phone, tablet, laptop, wide desktop) plus modal/dialog states:
@@ -223,7 +226,7 @@ app/
   api/session/clear/       stale-cookie escape hatch (clears cookie → /join)
   robots.ts sitemap.ts     crawl rules + sitemap (from NEXT_PUBLIC_APP_URL)
   opengraph-image.tsx      generated OG/Twitter card image (1200×630)
-  (app)/rooms/             hub (create/join room) + [roomId] layout & pages:
+  (app)/rooms/             hub (create/join room) + [roomId] layout & pages (+ skeleton loading states):
     [roomId]/board/        panel overview + [panelId] kanban
     [roomId]/panels/       directory
     [roomId]/admin/        control room + members (room-admin gated, noindex)
@@ -235,7 +238,7 @@ lib/
   site.ts                  site-wide URL/name constants
 components/
   board/ panels/ admin/    feature UI
-  shell/header.tsx         room-aware nav + sign-out
+  shell/header.tsx         room-aware nav, room-code copy + sign-out
   ui/                      design system primitives
 e2e/                       Playwright specs + self-contained serve/reset scripts
 prisma/                    schema, migrations (0_init), seed (users/rooms/panels)

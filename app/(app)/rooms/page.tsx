@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Header } from "@/components/shell/header";
+import { PendingLinkContent } from "@/components/shell/pending-link";
 import { Badge } from "@/components/ui/badge";
 import { Card, EmptyState } from "@/components/ui/empty-state";
 import { getCurrentUser } from "@/lib/auth";
@@ -42,30 +43,34 @@ export default async function RoomsPage() {
                   className="group animate-fade-up"
                   style={{ animationDelay: `${index * 45}ms` }}
                 >
-                  <Card className="h-full p-5 transition-colors group-hover:border-brand/40">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h2 className="truncate font-semibold tracking-tight text-ink group-hover:text-brand-ink">
-                          {room.name}
-                        </h2>
-                        <p className="mt-1 text-xs text-ink-3">
-                          Code{" "}
-                          <span className="font-mono font-semibold text-ink-2">
-                            {room.code}
-                          </span>{" "}
-                          · {room.panelCount}{" "}
-                          {room.panelCount === 1 ? "panel" : "panels"}
-                        </p>
+                  <PendingLinkContent>
+                    <Card className="h-full p-5 transition-colors group-hover:border-brand/40">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h2 className="truncate font-semibold tracking-tight text-ink group-hover:text-brand-ink">
+                            {room.name}
+                          </h2>
+                          <p className="mt-1 text-xs text-ink-3">
+                            Code{" "}
+                            <span className="font-mono font-semibold text-ink-2">
+                              {room.code}
+                            </span>{" "}
+                            · {room.panelCount}{" "}
+                            {room.panelCount === 1 ? "panel" : "panels"}
+                          </p>
+                        </div>
+                        <Badge
+                          tone={room.role === "ADMIN" ? "brand" : "neutral"}
+                        >
+                          {room.role}
+                        </Badge>
                       </div>
-                      <Badge tone={room.role === "ADMIN" ? "brand" : "neutral"}>
-                        {room.role}
-                      </Badge>
-                    </div>
-                    <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-brand-ink">
-                      Open board
-                      <DoorOpen className="size-4 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  </Card>
+                      <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-brand-ink">
+                        Open board
+                        <DoorOpen className="size-4 transition-transform group-hover:translate-x-0.5" />
+                      </span>
+                    </Card>
+                  </PendingLinkContent>
                 </Link>
               ))}
             </div>
