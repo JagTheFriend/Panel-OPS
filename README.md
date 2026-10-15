@@ -187,9 +187,9 @@ See [`.env.example`](.env.example):
 | --- | ------- |
 | `DATABASE_URL` / `DATABASE_URL_UNPOOLED` | app + direct (migrations) strings — Neon in prod, Docker locally |
 | `BETTER_AUTH_SECRET` | better-auth signing secret, ≥ 32 chars (`openssl rand -hex 32`) |
-| `BETTER_AUTH_URL` | base URL of the app (OAuth callbacks), e.g. `http://localhost:3000` |
+| `BETTER_AUTH_URL` | base URL of the app (OAuth callbacks), e.g. `http://localhost:3000` — on Vercel a missing/localhost value is replaced by the deployment origin automatically |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth client (empty = sign-in button errors gracefully; use seeded sessions locally) |
-| `NEXT_PUBLIC_APP_URL` | public origin for canonical/OG/sitemap/robots URLs (defaults to `http://localhost:3000`) |
+| `NEXT_PUBLIC_APP_URL` | public origin for canonical/OG/sitemap/robots URLs (defaults to the deployment origin on Vercel, `http://localhost:3000` otherwise) |
 | `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` / `_KEY` / `_HOST` / `_UI_HOST` | PostHog project key (either name works) + API/UI hosts (empty = no-op) |
 
 ## Deploying (Vercel + Neon + Google)
@@ -202,7 +202,9 @@ See [`.env.example`](.env.example):
    `http://localhost:3000/api/auth/callback/google` for local). Copy the client id and
    secret.
 3. Push the repo to GitHub and import it in Vercel. Set the env vars above —
-   `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to the production origin,
+   `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to the production origin (a missing
+   or localhost value falls back to the deployment origin automatically — never
+   leave a `localhost` value expecting it to work on a deployment),
    `BETTER_AUTH_SECRET` to a fresh `openssl rand -hex 32`, and the Google credentials.
    The `vercel-build` script runs `prisma generate && prisma migrate deploy && next
    build` (migrations ship in `prisma/migrations`).

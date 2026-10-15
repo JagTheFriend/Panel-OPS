@@ -6,10 +6,19 @@ import { headers } from "next/headers";
 import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { ActionError } from "@/lib/errors";
+import { resolvePublicOrigin } from "@/lib/site";
+
+const deploymentOrigins = [
+  process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  process.env.VERCEL_URL,
+]
+  .filter((host): host is string => Boolean(host))
+  .map((host) => `https://${host}`);
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: resolvePublicOrigin(process.env.BETTER_AUTH_URL),
+  trustedOrigins: deploymentOrigins,
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   socialProviders: {
     google: {
